@@ -1,0 +1,14 @@
+{% extends "layout/base.html" %}
+
+{% block title %}
+    flask-example hello
+{% endblock %}
+
+{% block content %}
+    <div class="intro">
+        <h2 class="text-center">Hello {{name}}.</h2>
+        <p class="text-center">To change your name access following URL with a given name: 
+            <span style="white-space: nowrap;">/hello/<strong>&lt;name&gt;</strong></span></p>
+    </div>
+    <div class="buttons"><a class="btn btn-primary" role="button" href="/hello/random" style="background: var(--cyan);">Random Name</a></div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "layout/base.html" %}
+
+{% block title %}
+    flask-example
+{% endblock %}
+
+{% block content %}
+    <div class="intro">
+        <h2 class="text-center">flask example ci/cd</h2>
+        <p class="text-center">Your flask application is running successfully.<br>Feel free to check out following example functionalities:</p>
+    </div>
+    <div class="buttons">
+        <a class="btn btn-primary" role="button" href="/hello/">Hello</a>
+        <a class="btn btn-primary" role="button" href="/primes/">Primes</a>
+    </div>
+{% endblock %}

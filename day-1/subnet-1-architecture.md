@@ -12,7 +12,7 @@ This folder also provides the Terraform code for this architecture session.
 ## Getting Started 
 1. Open your playpen repo in VS Code then create and checkout a new branch
 
-2. Create a new folder called day-1 and cd into the folder in the terminal and run the following commands:
+2. Create a new folder capstone-project, inside it create a folder called day-1 and cd into the folder in the terminal and run the following commands:
 
    ```
    gcloud auth login
@@ -145,11 +145,6 @@ variable "project_id" {
       }
    }
 ```
-
-Here we are creating an e2-micro machine type which is the smallest and cheapest compute instance available on GCP.
-
-We have also selected an Ubuntu 18 LTS image for the instance as it is a free Linux distribution. This is an LTS (Long Term Support) release of the Ubuntu distribution which means that this version of Ubuntu will be updated and patched regularly making it more secure than a non-LTS release.
-
 
 2. To allow SSH access into this external-vm, we need to create a firewall rule. To do this insert the following code block into `networks.tf`. 
 ```
@@ -286,6 +281,11 @@ ssh -i ~/.ssh/myKeyFile testUser@<EXTERNAL_IP>
 
 6. You should now be in the external-vm terminal. Similar to how we generated our previous key pair, run the following commands 
  ```
+   mkdir .ssh
+   ```
+   This will create a .ssh directory for you to store your SSH key pairs
+   Then to generate your key pair run the following command in your terminal
+ ```
    ssh-keygen -t rsa -f ~/.ssh/myKeyFile -C testUser -b 2048
 ```
 
@@ -299,9 +299,32 @@ ssh -i ~/.ssh/myKeyFile testUser@<EXTERNAL_IP>
    ```
    This will output the contents of the public key file into the terminal. Copy the entire contents of the file from `ssh-rsa` to `testUser` inclusive.
 
-8. Go to the GCP console, click on your internal-vm, and click edit. Under SSH keys, click Add item. Add your public key into the text box that you have previously copied, from `ssh-rsa` to `testUser` inclusive. Click save and wait for it to save.
+   Type `exit` to exit the VM session.
 
-9. Back in VS Code terminal where you should still be SSH into the external-vm, run the following command to test the SSH connection from our external-vm to our internal-vm. Where the <INTERNAL_IP> is the internal IP of the internal-vm. 
+8. In `vms.tf`, in the `internal_vm` resource block, add the following block of code to add the copied SSH key onto the internal-vm. This will allow SSH access from the external-vm into the internal-vm.
+```
+metadata = {
+    ssh-keys = "testUser:<SSH KEY HERE>"
+  }
+```
+
+9. In the terminal, run
+```
+terraform plan
+```
+You should see 0 to add, 1 change, 0 to destroy. Where the change is the addition of the SSH key. If you're happy with the plan, run
+```
+terraform apply
+```
+This should add the new SSH key to the internal_vm.
+
+9. To test the connectivity to the internal-vm, we first must SSH back into the external-vm.
+
+```
+ssh -i ~/.ssh/myKeyFile testUser@<EXTERNAL_IP>
+```
+
+10. Run the following command to test the SSH connection from our external-vm to our internal-vm. Where the <INTERNAL_IP> is the internal IP of the internal-vm. 
  ```
    ssh -i ~/.ssh/myKeyFile testUser@<INTERNAL_IP>
 ```
@@ -321,3 +344,6 @@ You have now created:
 - VM2 with SSH enabled to receive connections only from VM1
 
 You now have the base architecture for your first subnet where the external-vm will become a CI server with Jenkins, and the internal-vm will become a permenant slave agent.
+
+## Next steps
+The next guide to follow is subnet-2-architecture.md which will take you through the creation of the second subnet in the architecture.

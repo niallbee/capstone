@@ -12,9 +12,7 @@ This folder also provides the Terraform code for this architecture session.
 ## Getting Started 
 1. Open your playpen repo in VS Code then create and checkout a new branch
 
-2. Create a new folder called day-1 and inside that, another folder called create-VPC-subnet-VMs for this particular session
-
-3. cd to the create-VPC-subnet-VMs folder in the terminal and run the following commands:
+2. Create a new folder called day-1 and cd into the folder in the terminal and run the following commands:
 
    ```
    gcloud auth login

@@ -12,9 +12,9 @@ This folder also provides the Terraform code for this architecture session.
 ## Getting Started 
 1. Open your playpen repo in VS Code then create and checkout a new branch
 
-2. Create a new folder called Day 1 and inside that, another folder called Create VPC Subnet VM for this particular session
+2. Create a new folder called day-1 and inside that, another folder called create-VPC-subnet-VMs for this particular session
 
-3. cd to the Create VPC Subnet VM folder in the terminal and run the following commands:
+3. cd to the create-VPC-subnet-VMs folder in the terminal and run the following commands:
 
    ```
    gcloud auth login
@@ -114,11 +114,11 @@ variable "project_id" {
 }
 ```
 
-5. To test the subnet is configured correctly run
+5. To test if the subnet is configured correctly run
    ```
    terraform plan
    ```
-   If you are happy with the plan output run
+   If you are happy with the plan output, run
    ```
    terraform apply
    ```
@@ -131,8 +131,6 @@ variable "project_id" {
       name         = "external-vm"
       machine_type = "e2-micro"
       zone         = "${var.region}-b"
-
-     
 
       boot_disk {
          initialize_params {
@@ -155,7 +153,7 @@ Here we are creating an e2-micro machine type which is the smallest and cheapest
 We have also selected an Ubuntu 18 LTS image for the instance as it is a free Linux distribution. This is an LTS (Long Term Support) release of the Ubuntu distribution which means that this version of Ubuntu will be updated and patched regularly making it more secure than a non-LTS release.
 
 
-2. To allow SSH access into this external-vm, we need to create a firewall rule. To do thism insert the following code block into `networks.tf`. 
+2. To allow SSH access into this external-vm, we need to create a firewall rule. To do this insert the following code block into `networks.tf`. 
 ```
 resource "google_compute_firewall" "allow_external_ssh" {
   name    = "allow-external-ssh"
@@ -169,13 +167,13 @@ resource "google_compute_firewall" "allow_external_ssh" {
   source_ranges = ["0.0.0.0/0"]
 }
 ```
-This will allow SSH traffic from anywhere into your subnet to any resources with the tag "allow-external-ssh". 
+As we want SSH access from any source, we have allowed the source_ranges 0.0.0.0/0. We can use tags here to identify that which instances in the network may make network connections as specified in the firewall rule. In this case, let's assign it with the target_tags "allow-external-ssh". Any instance in the network that has this tag, will allow all SSH connections.
 
-3. As we have now created the firewall rule along with a target tag, lets add that target tag to the external-vm so that the firewall rule applies to said vm. Add the following line in `vms.tf` in the external_vm instance, above the boot disk block. 
+3. Lets now add that target tag to the external-vm so that the firewall rule applies. Add the following line in `vms.tf` in the external_vm instance, above the boot disk block. 
 ```
  tags = ["allow-external-ssh"]
 ```
-Now anyone from anywhere is able to ssh into this instance. 
+Now anyone from anywhere is able to SSH into this instance. 
 
 
 4. To connect to the external-vm, we need to generate an SSH key pair. Open a new terminal outside your code editor and ensure that you are in the root directory of your machine.  Then run the following line
@@ -268,9 +266,9 @@ resource "google_compute_firewall" "allow_internal_ssh" {
   
 }
 ```
-This firewall rule is very similar to the allow-external-ssh firewall rule, however the source_tags differ. If source tags are specified, the firewall will apply only to traffic with source IP that belongs to a tag listed in source tags. In this case, we want the firewall rule source tags to encompass the external-vm (allow SSH traffic only from the external-vm) only. Therefore we set the source_tags to all instances with the tag "allow-external-ssh", which applies only to our external vm. 
+This firewall rule is very similar to the allow-external-ssh firewall rule, however we are using source_tags over source_ranges. If source tags are specified, any traffic coming from an instance in the network with that tag will be allowed. In this case, we want our external-vm to have SSH access to our internal-vm. Our external-vm currently has the tag "allow-external-ssh", so let's make that a source_tag. Let's create a tag called "allow-internal-ssh" and any instances in the network with that tag will have this firewall applied.
 
-3. The target tag in the above bloc allows the firewall rule to be applied to anything in the network with the tag "allow-internal-ssh". Therefore we need to add this tag to our internal-vm instance. Add the following block of code in `vms.tf` in our internal-vm resource above the boot_disk block. 
+3. Now let's add the tag from the previous firewall into our internal-vm. This will allow SSH connection from our external-vm into our internal-vm. Add the following block of code in `vms.tf` in our internal-vm resource above the boot_disk block. 
 ```
    tags = ["allow-internal-ssh"]
 ```
@@ -281,7 +279,7 @@ terraform plan
 terraform apply
 ```
 
-5. Now we have a vm with a firewall that only allows traffic to our interal vm via our external vm. As we did with our previous vm, we need to add an SSH key. However it will be a different approach this time and will require a manual process rather than terraform. 
+5. Now we have a VM with a firewall that only allows traffic to our interal vm via our external vm. However, no SSH keys have been generated to allow this SSH connection. The steps to generate an SSH key are very similar to what we did for our external-vm, however this time it will require a manual process rather than terraform. 
 
 In the GCP console, copy the external IP of the external-vm. In the VS Code terminal, run the following code to SSH to the external-vm. Replacing <EXTERNAL_IP> with the copied external IP of the external-vm from GCP.
 ```
@@ -303,14 +301,14 @@ ssh -i ~/.ssh/myKeyFile testUser@<EXTERNAL_IP>
    ```
    This will output the contents of the public key file into the terminal. Copy the entire contents of the file from `ssh-rsa` to `testUser` inclusive.
 
-8. Go to the GCP console, click on your internal-vm, and click edit. Under SSH keys, click Add item. Add your public key into the text box that you have previously copied, from `ssh-rsa` to `testUser` inclusive. Click save.
+8. Go to the GCP console, click on your internal-vm, and click edit. Under SSH keys, click Add item. Add your public key into the text box that you have previously copied, from `ssh-rsa` to `testUser` inclusive. Click save and wait for it to save.
 
 9. Back in VS Code terminal where you should still be SSH into the external-vm, run the following command to test the SSH connection from our external-vm to our internal-vm. Where the <INTERNAL_IP> is the internal IP of the internal-vm. 
  ```
    ssh -i ~/.ssh/myKeyFile testUser@<INTERNAL_IP>
 ```
 
-10. You should now find that you have an SSH connection into the internal-vm. Therefore for SSH traffic to reach the internal vm, it first must go through the external-vm. To check that the external vm is SSH accessible from anywhere, and that the internal vm is only accessible from the external vm, run the following commands outside of any vm sessions. You can exit a vm session by typing `exit`. The first should form a successful connection. Then type exit to exit the session. The second should time out. 
+10. You should now find that you have an SSH connection into the internal-vm. Therefore for SSH traffic to reach the internal-vm, it first must go through the external-vm. To check that the external-vm is SSH accessible from anywhere, and that the internal-vm is only accessible from the external-vm, run the following commands outside of any vm sessions. You can exit a vm session by typing `exit`. The first should form a successful connection. Then type exit to exit the session. The second should time out. 
 ```
 ssh -i ~/.ssh/myKeyFile testUser@<external-vm EXTERNAL_IP>
 exit

@@ -129,3 +129,161 @@ variable "project_id" {
 
 ## Creating the webserver
 To create a webserver we are going to deploy a compute engine that runs a Docker image containing a Python Flask web application. There are many ways to host a [webserver on GCP](https://cloud.google.com/solutions/web-hosting) all with their own advantages and disadvantages. 
+
+1. For the webserver to be accessible to the internet it will need an external IP. We are going to assign it a fixed IP so that the database will know which server it can talk to. It will also make accessing our instance easier as no matter how many times we deploy it it will always have the same IP address. Insert the following code block in `webserver.tf`
+   ```
+   resource "google_compute_address" "webserver_ip" {
+     name   = "webserver-ip"
+     region = "europe-west2"
+   }
+   ```
+
+2. To create the compute engine add the following code block to `webserver.tf`
+   ```
+   resource "google_compute_instance" "webserver" {
+     name         = "python-web-server"
+     machine_type = "e2-small"
+     zone         = "europe-west2-b"
+   
+     tags         = ["allow-ssh","allow-http"]
+   
+     boot_disk {
+       initialize_params {
+         image = "ubuntu-os-cloud/ubuntu-1804-lts"
+       }
+     }
+     network_interface {
+       network    = google_compute_network.vpc_network.name
+       subnetwork = google_compute_subnetwork.webserver_subnet.name
+       access_config {
+         nat_ip = google_compute_address.webserver_ip.address
+       }
+     }
+   }
+   ```
+3. You can check the configuration of your compute engine by running
+   ```
+   terraform plan
+   ```
+   And deploy it using
+   ```
+   terraform apply
+   ```
+
+## Creating the Postgres database
+To use with our web application we are going to deploy a [PostgreSQL](https://www.postgresql.org) database which is an open source relational database. To deploy the database we are going to use a [cloud SQL](https://cloud.google.com/sql) instance. This is a fully managed relational database service provided by GCP. 
+1. To create the [sql database instance])(https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/sql_database_instance) insert the following code block into `database.tf`
+   ```
+   resource "google_sql_database_instance" "postgres" {
+     name             = "capstone-postgres-instance"
+     database_version = "POSTGRES_14"
+     region = var.region
+   
+     settings {
+       tier = "db-f1-micro"
+   
+       ip_configuration {
+   
+          authorized_networks {
+           name  = "web-server"
+           value = google_compute_address.webserver_ip.address
+           }
+           
+         }
+       }
+   
+     deletion_protection = false
+   }
+   ```
+   On this database instance we have configured it to only authorise access from our web server with the `authorised_networks` block. In this block we have whitelisted the IP of our webserver instance which means that the database will only accept connections from this IP. 
+2. We also need to create a [user](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/sql_user) for our web application so that it can access the database
+   ```
+   resource "google_sql_user" "user" {
+     name     = "application-user"
+     instance = google_sql_database_instance.postgres.name
+     password = random_password.db_password.result
+   }
+   ```
+3. To ensure a secure password for the database user we should randomly generate it. Terraform provides a resource for this called [random passsword]https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password. To create the random password insert the following code block in `database.tf`
+   ```
+   resource "random_password" "db_password" {
+       length = 10 
+       special = true
+   }  
+   ```
+4. We also want to create a database in our Postgres instance for our webserver to use. Insert the following code block into `database.tf`
+   ```
+   resource "google_sql_database" "python_app" {
+       name = "application"
+       instance = google_sql_database_instance.postgres.name
+   }
+   ```
+5. To deploy the database run 
+   ```
+   terraform plan
+   ```
+   Then 
+   ```
+   terrform apply
+   ```
+
+## Deploying the Python web app
+We can deploy our web application with a start up script on our compute instance. A start up script can be passed to the compute engine by Terraform and it will run automatically when the machine turns on. 
+
+For our start up script we will want to pass through bash commands which will run on our Ubuntu web server.
+### Creating the start up script
+1. In your current folder create a file called `application_script.sh`
+2. Insert the following code in `application_script.sh`
+   ```
+   #!/bin/bash
+   set -exo pipefail
+   ```
+   The first line sets the default shell for the script to be executed in as bash. The second line ensures that our script will output the executed commands to the terminal and that the if an error is encounted it will immediately exit and return the error code. These lines are best practice for bash scripts.
+3. Next we want to install Docker so that we can build our python web app into a Docker image. Insert the following lines into `application_script.sh`
+   ```
+   sudo apt-get update
+   sudo apt install docker.io -y
+   ```
+   The first line updates the Ubuntu OS ensuring we have all the latest packages. The second line installs Docker using Ubuntu's in-built package manager. The `-y` is important for this script as it ensures that the script doesn't "hang" waiting for your input to confirm the install. 
+4. Next we want to download the web app onto our compute instance. Insert the following lines into `application_script.sh`
+   ```
+   git clone https://github.com/zeg22/capstone-web-app.git
+   cd capstone-web-app/flask-example-cicd
+   ```
+5. Finally we want to build the python web app into a docker image and run the image so that our website is up and running. Insert the following lines into `application_script.sh`
+   ```
+   sudo docker build . -t flask-example-cicd:latest
+   sudo docker run --rm -d -p 8080:8080/tcp -e "DB_IP=${db_ip}"  -e "DB_USERNAME=${db_username}" -e "DB_PASSWORD=${db_password}" --name flask-example flask-example-cicd:latest
+   ```
+   The first line builds the Docker image and passes through the database IP, username and password for the application to use. The second runs the Docker image in detached mode so that our webserver is up and running.
+
+
+### Adding the start up script to the compute engine
+Now that we have created our start up script we need to add it to our compute instance. Insert the following into the compute instance resource block in `webserver.tf`
+```
+metadata_startup_script = templatefile("./application_script.sh", {db_ip = google_sql_database_instance.postgres.public_ip_address, db_username = google_sql_user.user.name, db_password = random_password.db_password.result})
+```
+This line passes the script file to the metadata as a start up script and passes through the values of the database IP, username and password from the Terraform configuration. 
+
+As our start up script needs information from the database and database user we need to ensure that these are created first. Insert the following line into the compute instance resource block
+```
+  depends_on = [
+    google_sql_database_instance.postgres,
+    google_sql_user.user
+  ]
+```
+
+To add these changes to the webserver run
+```
+terraform plan
+```
+Then 
+```
+terraform apply
+```
+
+## Viewing the website
+Copy and paste the IP of the webserver from the Terraform output of the apply. 
+Open a webbrowser and in the search bar enter `<EXTERNAL IP>:8080`. This will take you to the home page of your website! To test the database connection enter `<EXTERNAL IP>:8080/database/` in the search bar. 
+
+

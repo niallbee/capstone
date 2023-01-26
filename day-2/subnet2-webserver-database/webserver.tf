@@ -17,7 +17,7 @@ resource "google_compute_instance" "webserver" {
   }
   network_interface {
     network    = google_compute_network.vpc_network.name
-    subnetwork = google_compute_subnetwork.webserver_subnet.name
+    subnetwork = google_compute_subnetwork.subnet_2.name
     access_config {
       nat_ip = google_compute_address.webserver_ip.address
     }

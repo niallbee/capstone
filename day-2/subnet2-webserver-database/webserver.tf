@@ -8,7 +8,7 @@ resource "google_compute_instance" "webserver" {
   machine_type = "e2-small"
   zone         = "europe-west2-b"
 
-  tags         = ["allow-ssh","allow-http"]
+  tags         = ["allow-http"]
 
   boot_disk {
     initialize_params {
@@ -22,7 +22,7 @@ resource "google_compute_instance" "webserver" {
       nat_ip = google_compute_address.webserver_ip.address
     }
   }
-  
+
   metadata_startup_script = templatefile("./application_script.sh", {db_ip = google_sql_database_instance.postgres.public_ip_address, db_username = google_sql_user.user.name, db_password = random_password.db_password.result})
 
   depends_on = [

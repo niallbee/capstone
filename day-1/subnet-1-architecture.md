@@ -123,11 +123,11 @@ variable "project_id" {
    When  prompted type "yes" to execute the apply. This will provision the VPC and subnet in your GCP project. Once the apply is complete your VPC and subnet will be visible in the console.
 
 ## Creating a VM with external SSH connection enabled - architecture for a CI server with Jenkins
-1. To create the linux compute instance, insert the following code block into `vms.tf`
+1. To create the linux compute instance, insert the following code block into `vms.tf`. The machine_type here is e2-small as the requirements to run Jenkins (covered in future guide) requires more RAM than e2-micro provides.
 ```
    resource "google_compute_instance" "external_vm" {
       name         = "external-vm"
-      machine_type = "e2-micro"
+      machine_type = "e2-small"
       zone         = "${var.region}-b"
 
       boot_disk {

@@ -1,7 +1,7 @@
 // External SSH enabled
 resource "google_compute_instance" "external_vm" {
   name         = "external-vm"
-  machine_type = "e2-micro"
+  machine_type = "e2-small"
   zone         = "${var.region}-b"
 
   tags = ["allow-external-ssh"]

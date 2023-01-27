@@ -9,11 +9,13 @@ This session will create the architecture for subnet 2 of the Capstone project. 
 
 This session will use Terraform, shell scripts and docker to deploy a complete web app. 
 
+## Prerequisites
+Before completeing this session you will need to deploy the infrastructure from the previous session (day 1) as we will deploy this infrastructure into the same VPC.
 
 ## Getting Started 
-1. Open your playpen repo in VS Code then create and checkout a new branch (if you completed the previous session use the same branch for this lab)
+1. Open your playpen repo in VS Code then create and checkout the branch you used in the previous session
 
-2. If required create a new folder capstone-project, inside it create a folder called day-2 and cd into the folder in the terminal and run the following commands:
+2. In the folder capstone-project, create a folder called day-2 and cd into the folder in the terminal and run the following commands:
 
    ```
    gcloud auth login
@@ -42,7 +44,8 @@ This session will use Terraform, shell scripts and docker to deploy a complete w
     - `database.tf` 
     - `variables.tf` 
     - `outputs.tf`
-    -  `providers.tf`
+    - `providers.tf`
+    - `data.tf`
 
 2. In `providers.tf`, add the following block of code. Replace <WORKSPACE_HERE> with the name of your workspace. e.g. playpen-a1b2cd-gcp
 ```
@@ -82,14 +85,14 @@ variable "project_id" {
    terraform init
    ```
 
-## Creating the VPC, Subnet and Firewall rule
-1. To create a VPC insert the following code block in `networks.tf`
+## Creating the Subnet and Firewall rule
+1. We want to create our subnet in the VPC that we created in the previous session. To do this we need to assign the subnet to our VPC in resource block, but the VPC doesn't exist in our Terraform directory. To obtain information about a resource in GCP that has not been deployed in our Terraform we can use a [data blocks](https://developer.hashicorp.com/terraform/language/data-sources). 
+   In `data.tf` insert the following code block
    ```
-    resource "google_compute_network" "vpc_network" {
-        name                    = "vpc-network"
-        auto_create_subnetworks = false
-    }
-   ```
+   data "google_compute_network" "vpc_network" {
+     name = "vpc-network"
+   }
+   ```   
 2. To create subnet-2 insert the following code block into `networks.tf`
    ```
    resource "google_compute_subnetwork" "subnet_2" {

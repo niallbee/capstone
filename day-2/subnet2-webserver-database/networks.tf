@@ -1,17 +1,13 @@
-resource "google_compute_network" "vpc_network" {
-  name                    = "vpc-network"
-  auto_create_subnetworks = false
-}
 resource "google_compute_subnetwork" "subnet_2" {
   name          = "webserver-subnetwork"
   ip_cidr_range = "10.0.0.0/24"
   region        = "europe-west2"
-  network       = google_compute_network.vpc_network.id
+  network       = data.google_compute_network.vpc_network.id
 }
 
 resource "google_compute_firewall" "allow_ssh" {
   name    = "allow-ssh"
-  network = google_compute_network.vpc_network.name
+  network = data.google_compute_network.vpc_network.name
 
   allow {
     protocol = "tcp"
@@ -23,7 +19,7 @@ resource "google_compute_firewall" "allow_ssh" {
 
 resource "google_compute_firewall" "allow_http" {
   name    = "allow-http"
-  network = google_compute_network.vpc_network.name
+  network = data.google_compute_network.vpc_network.name
 
   allow {
     protocol = "tcp"

@@ -48,37 +48,37 @@ Before completeing this session you will need to deploy the infrastructure from 
     - `data.tf`
 
 2. In `providers.tf`, add the following block of code. Replace <WORKSPACE_HERE> with the name of your workspace. e.g. playpen-a1b2cd-gcp
-```
-   terraform {
-   required_providers {
-      google = {
-         source  = "hashicorp/google"
-         version = "~> 4.0.0"
-      }
-   }
-
-      cloud {
-      organization = "lbg-cloud-platform"
-
-      workspaces {
-               name = "<WORKSPACE_HERE>"
+   ```
+      terraform {
+      required_providers {
+         google = {
+            source  = "hashicorp/google"
+            version = "~> 4.0.0"
          }
-      }   
-   }
-
-   provider "google" {
-   project = var.project_id
-   }
-```
+      }
+   
+         cloud {
+         organization = "lbg-cloud-platform"
+   
+         workspaces {
+                  name = "<WORKSPACE_HERE>"
+            }
+         }   
+      }
+   
+      provider "google" {
+      project = var.project_id
+      }
+   ```
 
 3. Currently, var.project_id is not defined, let's add the following block of code in `variables.tf` to define it. Replace the <PLAYPEN_PROJECT_ID_HERE> with the name of your playpen project, e.g. playpen-a1b2cd
-```
-variable "project_id" {
-  description = "The ID of the GCP project where resources will be deployed"
-  type        = string
-  default     = "<PLAYPEN_PROJECT_ID_HERE>"
-}
-```
+   ```
+   variable "project_id" {
+     description = "The ID of the GCP project where resources will be deployed"
+     type        = string
+     default     = "<PLAYPEN_PROJECT_ID_HERE>"
+   }
+   ```
 
 4. To initialise your Terraform directory and download the Google provider run
    ```
@@ -99,7 +99,7 @@ variable "project_id" {
      name          = "webserver-subnetwork"
      ip_cidr_range = "10.0.0.0/24"
      region        = "europe-west2"
-     network       = google_compute_network.vpc_network.id
+     network       = data.google_compute_network.vpc_network.id
    }
    ```
 3. Currently, the variable `var.region` is not defined. In `variables.tf`, add the following block of code to define var.region
@@ -118,7 +118,7 @@ variable "project_id" {
    ```
    resource "google_compute_firewall" "allow_http" {
      name    = "allow-http"
-     network = google_compute_network.vpc_network.name
+     network = data.google_compute_network.vpc_network.name
    
      allow {
        protocol = "tcp"
@@ -156,7 +156,7 @@ To create a webserver we are going to deploy a compute engine that runs a Docker
        }
      }
      network_interface {
-       network    = google_compute_network.vpc_network.name
+       network    = data.google_compute_network.vpc_network.name
        subnetwork = google_compute_subnetwork.webserver_subnet.name
        access_config {
          nat_ip = google_compute_address.webserver_ip.address
@@ -175,7 +175,7 @@ To create a webserver we are going to deploy a compute engine that runs a Docker
 
 ## Creating the Postgres database
 To use with our web application we are going to deploy a [PostgreSQL](https://www.postgresql.org) database which is an open source relational database. To deploy the database we are going to use a [cloud SQL](https://cloud.google.com/sql) instance. This is a fully managed relational database service provided by GCP. 
-1. To create the [sql database instance])(https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/sql_database_instance) insert the following code block into `database.tf`
+1. To create the [sql database instance](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/sql_database_instance) insert the following code block into `database.tf`
    ```
    resource "google_sql_database_instance" "postgres" {
      name             = "capstone-postgres-instance"
@@ -207,7 +207,7 @@ To use with our web application we are going to deploy a [PostgreSQL](https://ww
      password = random_password.db_password.result
    }
    ```
-3. To ensure a secure password for the database user we should randomly generate it. Terraform provides a resource for this called [random passsword]https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password. To create the random password insert the following code block in `database.tf`
+3. To ensure a secure password for the database user we should randomly generate it. Terraform provides a resource for this called [random passsword](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password). To create the random password insert the following code block in `database.tf`
    ```
    resource "random_password" "db_password" {
        length = 10 

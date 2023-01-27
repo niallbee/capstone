@@ -10,7 +10,7 @@ This session will create the architecture for subnet 2 of the Capstone project. 
 This session will use Terraform, shell scripts and docker to deploy a complete web app. 
 
 ## Prerequisites
-Before completeing this session you will need to deploy the infrastructure from the previous session (day 1) as we will deploy this infrastructure into the same VPC.
+Before completing this session you will need to deploy the infrastructure from the previous session (day 1) as we will deploy this infrastructure into the same VPC.
 
 ## Getting Started 
 1. Open your playpen repo in VS Code then create and checkout the branch you used in the previous session

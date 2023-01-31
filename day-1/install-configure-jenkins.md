@@ -90,7 +90,7 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 
 ## Creating an admin user for the Jenkins controller (VM1)
 
-1. In the Jenkins setup wizard, paste the copied password into the Administrator password box. Click continue.
+1. In the Jenkins set up wizard in your browser, paste the copied password into the Administrator password box. Click continue.
 
 2. In the Jenkins UI page you should see options to install suggested plugins or select plugins to install. Click install suggested plugins. 
 
@@ -134,7 +134,7 @@ mkdir /home/jenkins/jenkins_slave
 
 ## Setting up Jenkins slave using ssh keys
 
-1. While logged in as the jenkins user, create a .ssh directory and cd into the directory
+1. While logged into the agent VM as the jenkins user, create a .ssh directory and cd into the directory
 ```
 mkdir ~/.ssh && cd ~/.ssh
 ```
@@ -156,8 +156,7 @@ cat id_rsa
 ```
 
 ## Adding the SSH Private Key to Jenkins Credentials
-
-1. Go to the jenkins dashboard (you should have noted this down earlier). Go to Manage Jenkins -> Manage Credentials. Click `(global)` and click 'Add credentials'.
+1. Go to the jenkins dashboard UI in the browser (you should have noted this down earlier). Go to Manage Jenkins -> Manage Credentials. Click `(global)` and click 'Add credentials'.
 
 2. Add the following fields to the credential
 - Kind: SSH username with private key

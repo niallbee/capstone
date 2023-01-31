@@ -6,9 +6,6 @@ This guide will take you through the steps to:
 
 This folder also provides the Terraform code for this architecture session. 
 
-jenkins-controller-vm = jenkins-controller-vm
-jenkins-agent-vm = jenkins-agent-vm
-
 ## Getting Started 
 Before following this guide, please make sure that you have followed all the previous guides. 
 

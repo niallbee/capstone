@@ -1,6 +1,6 @@
 // External SSH enabled
 resource "google_compute_instance" "jenkins_controller_vm" {
-  name         = "jenkins_controller_vm"
+  name         = "jenkins-controller-vm"
   machine_type = "e2-small"
   zone         = "${var.region}-b"
 
@@ -29,7 +29,7 @@ resource "google_compute_instance" "jenkins_controller_vm" {
 
 // SSH enabled to receive connections only from VM1
 resource "google_compute_instance" "jenkins_agent_vm" {
-  name         = "jenkins_agent_vm"
+  name         = "jenkins-agent-vm"
   machine_type = "e2-small"
   zone         = "${var.region}-b"
 

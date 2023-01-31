@@ -1,6 +1,6 @@
 // External SSH enabled
-resource "google_compute_instance" "external_vm" {
-  name         = "external-vm"
+resource "google_compute_instance" "jenkins_controller_vm" {
+  name         = "jenkins_controller_vm"
   machine_type = "e2-small"
   zone         = "${var.region}-b"
 
@@ -27,9 +27,9 @@ resource "google_compute_instance" "external_vm" {
 
 
 // SSH enabled to receive connections only from VM1
-resource "google_compute_instance" "internal_vm" {
-  name         = "internal-vm"
-  machine_type = "e2-micro"
+resource "google_compute_instance" "jenkins_agent_vm" {
+  name         = "jenkins_agent_vm"
+  machine_type = "e2-small"
   zone         = "${var.region}-b"
 
   tags = ["allow-internal-ssh"]
@@ -46,5 +46,8 @@ resource "google_compute_instance" "internal_vm" {
     access_config {
       // Ephemeral public IP
     }
+  }
+  metadata = {
+    ssh-keys = "testUser:KEY FILE HERE"
   }
 }

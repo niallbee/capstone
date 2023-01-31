@@ -23,7 +23,7 @@ resource "google_compute_instance" "jenkins_controller_vm" {
   metadata = {
     ssh-keys = "testUser:KEY FILE HERE"
   }
-  metadata_startup_script = file("./jenkins_script.sh")
+  metadata_startup_script = file("./jenkins_java_script.sh")
 }
 
 

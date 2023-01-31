@@ -1,6 +1,6 @@
 resource "google_compute_subnetwork" "subnet_2" {
   name          = "webserver-subnetwork"
-  ip_cidr_range = "10.0.0.0/24"
+  ip_cidr_range = "10.0.1.0/24"
   region        = "europe-west2"
   network       = data.google_compute_network.vpc_network.id
 }

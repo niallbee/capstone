@@ -1,4 +1,4 @@
-# Day 1 - Deploying a webserver and database
+# Day 2 - Deploying a webserver and database
 
 # Overview
 This session will create the architecture for subnet 2 of the Capstone project. This guide will take you through deploying the following architecute
@@ -13,7 +13,7 @@ This session will use Terraform, shell scripts and docker to deploy a complete w
 Before completing this session you will need to deploy the infrastructure from the previous session (day 1) as we will deploy this infrastructure into the same VPC.
 
 ## Getting Started 
-1. Open your playpen repo in VS Code then create and checkout the branch you used in the previous session
+1. Open your playpen repo in VS Code then checkout the branch you used in the previous session
 
 2. In the folder capstone-project, create a folder called day-2 and cd into the folder in the terminal and run the following commands:
 

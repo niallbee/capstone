@@ -5,7 +5,9 @@ This first session is to create some of the architecture for the Capstone projec
 - VM1 with external SSH connection enabled 
 - VM2 with SSH enabled to receive connections only from VM1
 
-This provides the architecture for a subnet containing a VM that will be a CI server with Jenkins and SSH enabled, and another that will be a permenant slave agent. 
+VM1 will be a Jenkins controller. The Jenkins controller is the original node in the Jenkins installation. The Jenkins controller administers the Jenkins agents and orchastrates their work, including scheduling jobs on agents and monitoring agents. This means that it requires external SSH connection to allow us to SSH into it and configure it. 
+
+VM2 will be the Jenkins agent. A Jenkins agent connects to its controller and executes tasks when directed by the controller. This explains why the agent VM needs to allow SSH traffic from controller VM and nowhere else, as it is it's controller. 
 
 This folder also provides the Terraform code for this architecture session. 
 
@@ -122,12 +124,12 @@ variable "project_id" {
    ```
    When  prompted type "yes" to execute the apply. This will provision the VPC and subnet in your GCP project. Once the apply is complete your VPC and subnet will be visible in the console.
 
-## Creating a VM with external SSH connection enabled - architecture for a CI server with Jenkins
-1. To create the linux compute instance, insert the following code block into `vms.tf`
+## Creating a VM with external SSH connection enabled - architecture for the Jenkins controller
+1. To create the linux compute instance required for the Jenkins controller, insert the following code block into `vms.tf`. Eventually we will need to run Jenkins on this instance. A prerequisite for a Jenkins installation requires the RAM provided by an e2-small, an e2-micro does not provide enough RAM to run Jenkins. 
 ```
-   resource "google_compute_instance" "external_vm" {
-      name         = "external-vm"
-      machine_type = "e2-micro"
+   resource "google_compute_instance" "jenkins_controller_vm" {
+      name         = "jenkins-controller-vm"
+      machine_type = "e2-small"
       zone         = "${var.region}-b"
 
       boot_disk {
@@ -146,7 +148,7 @@ variable "project_id" {
    }
 ```
 
-2. To allow SSH access into this external-vm, we need to create a firewall rule. To do this insert the following code block into `networks.tf`. 
+2. To allow SSH access into this jenkins-controller-vm, we need to create a firewall rule. To do this insert the following code block into `networks.tf`. 
 ```
 resource "google_compute_firewall" "allow_external_ssh" {
   name    = "allow-external-ssh"
@@ -162,14 +164,14 @@ resource "google_compute_firewall" "allow_external_ssh" {
 ```
 As we want SSH access from any source, we have allowed the source_ranges 0.0.0.0/0. We can use tags here to identify that which instances in the network may make network connections as specified in the firewall rule. In this case, let's assign it with the target_tags "allow-external-ssh". Any instance in the network that has this tag, will allow all SSH connections.
 
-3. Lets now add that target tag to the external-vm so that the firewall rule applies. Add the following line in `vms.tf` in the external_vm instance, above the boot disk block. 
+3. Lets now add that target tag to the jenkins-controller-vm so that the firewall rule applies. Add the following line in `vms.tf` in the jenkins_controller_vm instance, above the boot disk block. 
 ```
  tags = ["allow-external-ssh"]
 ```
 Now anyone from anywhere is able to SSH into this instance. 
 
 
-4. To connect to the external-vm, we need to generate an SSH key pair. Open a new terminal outside your code editor and ensure that you are in the root directory of your machine.  Then run the following line
+4. To connect to the jenkins-controller-vm, we need to generate an SSH key pair. Open a new terminal outside your code editor and ensure that you are in the root directory of your machine.  Then run the following line
    ```
    mkdir .ssh
    ```
@@ -188,7 +190,7 @@ Now anyone from anywhere is able to SSH into this instance.
    ```
    This will output the contents of the public key file into the terminal. Copy the entire contents of the file from `ssh-rsa` to `testUser` inclusive.
 
-4. Add the following code into `vms.tf` into your compute instance (external_vm) resource block and replace "YOUR KEY FILE HERE" with the contents of your public key file
+4. Add the following code into `vms.tf` into your compute instance (jenkins_controller_vm) resource block and replace "YOUR KEY FILE HERE" with the contents of your public key file
    ```
     metadata = {
         ssh-keys = "testUser:YOUR KEY FILE HERE"
@@ -200,16 +202,15 @@ Now anyone from anywhere is able to SSH into this instance.
 5. To add the linux compute instance with external ssh access to our GCP project, run the following:
    ```
    terraform plan
-   ```
-   ```
+
    terraform apply
    ```
 
-6. You are now ready to test the connection to your VM! Go to the GCP console and copy the external IP from the external-vm. Then run the following commands in the terminal, replacing <EXTERNAL_IP> with the copied external IP from GCP.
+6. You are now ready to test the connection to your VM! Go to the GCP console and copy the external IP from the jenkins-controller-vm. Then run the following commands in the terminal, replacing <EXTERNAL_IP> with the copied external IP from GCP.
    ```
    ssh -i ~/.ssh/myKeyFile testUser@<EXTERNAL_IP>
    ```
-   When you have successfully connected you should be able to see a welcome message and `testUser@external-vm`
+   When you have successfully connected you should be able to see a welcome message and `testUser@jenkins-controller-vm`
 
 7. Now you are connected to you Linux VM you can run on it from your local machine. Try running the following command to output the version of Linux on the instance
    ```
@@ -217,12 +218,12 @@ Now anyone from anywhere is able to SSH into this instance.
    ```
 
 
-## Creating a VM with SSH enabled to receive connections from our already created external VM only - architecture for a permenant slave agent
+## Creating a VM with SSH enabled to receive connections from the jenkins controller vm only - architecture for a permenant slave agent
 1. To create the linux compute instance, insert the following code block into `vms.tf`
 ```
-   resource "google_compute_instance" "internal_vm" {
-      name         = "internal-vm"
-      machine_type = "e2-micro"
+   resource "google_compute_instance" "jenkins_agent_vm" {
+      name         = "jenkins-agent-vm"
+      machine_type = "e2-small"
       zone         = "${var.region}-b"
 
       boot_disk {
@@ -240,9 +241,8 @@ Now anyone from anywhere is able to SSH into this instance.
       }
    }
 ```
-This is idential to our first external-vm but will have a different firewall rule applied to it. 
 
-2. We want to create a firewall rule that applies only to the internal-vm and that only allows ssh connections from our external-vm. 
+2. We want to create a firewall rule that applies only to the jenkins-agent-vm and that only allows ssh connections from our jenkins-controller-vm. 
 
  In `networks.tf` add the following code block
 ```
@@ -259,9 +259,9 @@ resource "google_compute_firewall" "allow_internal_ssh" {
   
 }
 ```
-This firewall rule is very similar to the allow-external-ssh firewall rule, however we are using source_tags over source_ranges. If source tags are specified, any traffic coming from an instance in the network with that tag will be allowed. In this case, we want our external-vm to have SSH access to our internal-vm. Our external-vm currently has the tag "allow-external-ssh", so let's make that a source_tag. Let's create a tag called "allow-internal-ssh" and any instances in the network with that tag will have this firewall applied.
+This firewall rule is very similar to the allow-external-ssh firewall rule, however we are using source_tags over source_ranges. If source tags are specified, any traffic coming from an instance in the network with that tag will be allowed. In this case, we want our jenkins-controller-vm to have SSH access to our jenkins-agent-vm. Our jenkins-controller-vm currently has the tag "allow-external-ssh", so let's make that a source_tag. Let's create a tag called "allow-internal-ssh" and any instances in the network with that tag will have this firewall applied.
 
-3. Now let's add the tag from the previous firewall into our internal-vm. This will allow SSH connection from our external-vm into our internal-vm. Add the following block of code in `vms.tf` in our internal-vm resource above the boot_disk block. 
+3. Now let's add the tag from the previous firewall into our jenkins-agent-vm. This will allow SSH connection from our jenkins-controller-vm into our jenkins-agent-vm. Add the following block of code in `vms.tf` in our jenkins-agent-vm resource above the boot_disk block. 
 ```
    tags = ["allow-internal-ssh"]
 ```
@@ -272,14 +272,14 @@ terraform plan
 terraform apply
 ```
 
-5. Now we have a VM with a firewall that only allows traffic to our interal vm via our external vm. However, no SSH keys have been generated to allow this SSH connection. The steps to generate an SSH key are very similar to what we did for our external-vm, however this time it will require a manual process rather than terraform. 
+5. Now we have a VM with a firewall that only allows traffic to our agent vm via our controller vm. However, no SSH keys have been generated to allow this SSH connection. The steps to generate an SSH key are very similar to what we did for our jenkins-controller-vm, however this time it will require a manual process rather than terraform. 
 
-In the GCP console, copy the external IP of the external-vm. In the VS Code terminal, run the following code to SSH to the external-vm. Replacing <EXTERNAL_IP> with the copied external IP of the external-vm from GCP.
+In the GCP console, copy the external IP of the jenkins-controller-vm. In the VS Code terminal, run the following code to SSH to the jenkins-controller-vm. Replacing <EXTERNAL_IP> with the copied external IP of the jenkins-controller-vm from GCP.
 ```
 ssh -i ~/.ssh/myKeyFile testUser@<EXTERNAL_IP>
 ```
 
-6. You should now be in the external-vm terminal. Similar to how we generated our previous key pair, run the following commands 
+6. You should now be in the jenkins-controller-vm terminal. Similar to how we generated our previous key pair, run the following commands 
  ```
    mkdir .ssh
    ```
@@ -293,7 +293,7 @@ ssh -i ~/.ssh/myKeyFile testUser@<EXTERNAL_IP>
 
    Once this has run it will create two files: myKeyFile (the private key) and myKeyFile.pub (the public key) in the .ssh directory
 
-7. To authenticate your connection over SSH to your internal-vm machine it will need the public key of your key pair. We can do this by adding the public key file to the internal-vm. But first we will need to retrieve the contents of your public key file. In your terminal run the following command:
+7. To authenticate your connection over SSH to your jenkins-agent-vm machine it will need the public key of your key pair. We can do this by adding the public key file to the jenkins-agent-vm. But first we will need to retrieve the contents of your public key file. In your terminal run the following command:
    ```
    cat ~/.ssh/myKeyFile.pub
    ```
@@ -301,7 +301,7 @@ ssh -i ~/.ssh/myKeyFile testUser@<EXTERNAL_IP>
 
    Type `exit` to exit the VM session.
 
-8. In `vms.tf`, in the `internal_vm` resource block, add the following block of code to add the copied SSH key onto the internal-vm. This will allow SSH access from the external-vm into the internal-vm.
+8. In `vms.tf`, in the `jenkins_agent_vm` resource block, add the following block of code to add the copied SSH key onto the jenkins-agent-vm. This will allow SSH access from the jenkins-controller-vm into the jenkins-agent-vm.
 ```
 metadata = {
     ssh-keys = "testUser:<SSH KEY HERE>"
@@ -316,34 +316,34 @@ You should see 0 to add, 1 change, 0 to destroy. Where the change is the additio
 ```
 terraform apply
 ```
-This should add the new SSH key to the internal_vm.
+This should add the new SSH key to the jenkins_agent_vm.
 
-9. To test the connectivity to the internal-vm, we first must SSH back into the external-vm.
+9. To test the connectivity to the jenkins-agent-vm, we first must SSH back into the jenkins-controller-vm.
 
 ```
 ssh -i ~/.ssh/myKeyFile testUser@<EXTERNAL_IP>
 ```
 
-10. Run the following command to test the SSH connection from our external-vm to our internal-vm. Where the <INTERNAL_IP> is the internal IP of the internal-vm. 
+10. Run the following command to test the SSH connection from our jenkins-controller-vm to our jenkins-agent-vm. Where the <INTERNAL_IP> is the internal IP of the jenkins-agent-vm. 
  ```
    ssh -i ~/.ssh/myKeyFile testUser@<INTERNAL_IP>
 ```
 
-10. You should now find that you have an SSH connection into the internal-vm. Therefore for SSH traffic to reach the internal-vm, it first must go through the external-vm. To check that the external-vm is SSH accessible from anywhere, and that the internal-vm is only accessible from the external-vm, run the following commands outside of any vm sessions. You can exit a vm session by typing `exit`. The first should form a successful connection. Then type exit to exit the session. The second should time out. 
+10. You should now find that you have an SSH connection into the jenkins-agent-vm. Therefore for SSH traffic to reach the jenkins-agent-vm, it first must go through the jenkins-controller-vm. To check that the jenkins-controller-vm is SSH accessible from anywhere, and that the jenkins-agent-vm is only accessible from the jenkins-controller-vm, run the following commands outside of any vm sessions. You can exit a vm session by typing `exit`. The first should form a successful connection. Then type exit to exit the session. The second should time out. 
 ```
-ssh -i ~/.ssh/myKeyFile testUser@<external-vm EXTERNAL_IP>
+ssh -i ~/.ssh/myKeyFile testUser@<jenkins-controller-vm EXTERNAL_IP>
 exit
-ssh -i ~/.ssh/myKeyFile testUser@<internal-vm INTERNAL_IP>
+ssh -i ~/.ssh/myKeyFile testUser@<jenkins-agent-vm INTERNAL_IP>
 ```
 
 ## Finishing up
 You have now created:
 - VPC 
 - Subnet 1 
-- VM1 with external SSH connection enabled 
-- VM2 with SSH enabled to receive connections only from VM1
+- The architecture for a Jenkins controller with external SSH connection enabled (VM1)
+- The architecture for a Jenkins agent (VM2) with SSH enabled to receive connections only from the controller (VM1)
 
-You now have the base architecture for your first subnet where the external-vm will become a CI server with Jenkins, and the internal-vm will become a permenant slave agent.
+You now have the base architecture for your first subnet where the jenkins-controller-vm will become a Jenkins controller and the jenkins-agent-vm will become a permenant slave agent.
 
 ## Next steps
-The next guide to follow is subnet-2-architecture.md which will take you through the creation of the second subnet in the architecture.
+Link to next guide here!

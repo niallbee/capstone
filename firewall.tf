@@ -1,15 +1,3 @@
-resource "google_compute_network" "vpc_network" {
-  name                    = "vpc-network"
-  auto_create_subnetworks = false
-}
-
-resource "google_compute_subnetwork" "subnet-1" {
-  name          = "subnetwork-1"
-  ip_cidr_range = "10.0.0.0/24"
-  region        = var.region
-  network       = google_compute_network.vpc_network.id
-}
-
 resource "google_compute_firewall" "allow_external_ssh" {
   name    = "allow-external-ssh"
   network = google_compute_network.vpc_network.name
@@ -32,6 +20,7 @@ resource "google_compute_firewall" "allow_internal_ssh" {
   }
   target_tags   = ["allow-internal-ssh"]
   source_tags = ["allow-external-ssh"]
+  
 }
 
 resource "google_compute_firewall" "allow_http" {
@@ -46,3 +35,15 @@ resource "google_compute_firewall" "allow_http" {
   source_ranges = ["0.0.0.0/0"]
 }
 
+resource "google_compute_firewall" "default" {
+  name          = "fw-allow-health-check"
+  direction     = "INGRESS"
+  network       = google_compute_network.vpc_network.name
+  priority      = 1000
+  source_ranges = ["130.211.0.0/22", "35.191.0.0/16"]
+  target_tags   = ["allow-health-check"]
+  allow {
+    ports    = ["8080"]
+    protocol = "tcp"
+  }
+}

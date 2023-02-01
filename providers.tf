@@ -10,7 +10,7 @@ terraform {
     organization = "lbg-cloud-platform"
 
     workspaces {
-            name = "<WORKSPACE_HERE>"
+            name = "playpen-4rj1sn-gcp"
         }
     }   
 }

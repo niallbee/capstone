@@ -2,8 +2,7 @@ FROM python:3.9-alpine
 WORKDIR /code
 COPY . .
 COPY requirements.txt requirements.txt
-#RUN apk add --no-cache --virtual .build-deps gcc musl-dev \
-#    && 
+RUN apk add --no-cache --virtual .build-deps gcc musl-dev
 RUN pip install -r requirements.txt \
     && pip install -e . \
     && apk del .build-deps

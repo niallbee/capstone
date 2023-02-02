@@ -11,7 +11,6 @@ resource "google_compute_instance_group" "webservers" {
     name = "http"
     port = "8080"
   }
-
 }
 
 resource "google_compute_backend_service" "webserver_backend" {

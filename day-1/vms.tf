@@ -23,7 +23,7 @@ resource "google_compute_instance" "jenkins_controller_vm" {
   metadata = {
     ssh-keys = "testUser:KEY FILE HERE"
   }
-  metadata_startup_script = file("./jenkins_java_script.sh")
+  metadata_startup_script = file("./day-1/jenkins_java_script.sh")
 }
 
 
@@ -44,9 +44,6 @@ resource "google_compute_instance" "jenkins_agent_vm" {
   network_interface {
     network    = var.vpc_name
     subnetwork = var.subnet_name
-    access_config {
-      // Ephemeral public IP
-    }
   }
   metadata = {
     ssh-keys = "testUser:KEY FILE HERE"

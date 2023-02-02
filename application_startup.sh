@@ -2,6 +2,9 @@
 set -exo pipefail
 # This script installs and runs the python web application
 sudo apt-get update
+sudo apt install nginx -y
+sudo systemctl restart nginx
+
 
 sudo apt install docker.io -y
 

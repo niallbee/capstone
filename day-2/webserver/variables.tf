@@ -16,5 +16,5 @@ variable "subnet_2_name" {
 }
 
 variable "subnet_2_id" {
-  
+  type = string
 }

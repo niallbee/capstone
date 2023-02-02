@@ -4,7 +4,7 @@ resource "google_compute_instance" "webserver" {
   machine_type = "e2-small"
   zone         = "${var.region}-b"
 
-  tags = ["allow-http", "allow-health-check"]
+  tags = ["allow-health-check"]
 
   boot_disk {
     initialize_params {
@@ -15,7 +15,7 @@ resource "google_compute_instance" "webserver" {
     network    = var.vpc_name
     subnetwork = var.subnet_2_name
   }
-
-  metadata_startup_script = file("./nginx_startup.sh")
+  
+  metadata_startup_script = file("./day-2/webserver/nginx_startup.sh")
 
 }

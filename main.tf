@@ -12,12 +12,11 @@ module "web_application" {
   subnet_2_name = google_compute_subnetwork.subnet_2.name
   subnet_2_id = google_compute_subnetwork.subnet_2.id
   region = var.region
-
 }
 
-# module "load_balancer" {
-#     source = "./day-2/load_balancer"
-#     webserver_1_id = module.web_application.webserver_1_id
-#     webserver_2_id = module.web_application.webserver_2_id
-#     region = var.region
-# }
+module "load_balancer" {
+    source = "./day-2/load_balancer"
+    webserver_1_id = module.web_application.webserver_1_id
+    webserver_2_id = module.web_application.webserver_2_id
+    region = var.region
+}

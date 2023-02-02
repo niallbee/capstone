@@ -49,6 +49,7 @@ curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo tee   /usr
 echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc]   https://pkg.jenkins.io/debian-stable binary/ | sudo tee   /etc/apt/sources.list.d/jenkins.list > /dev/null
 sudo apt-get update
 sudo apt-get install jenkins
+sudo reboot
 ```
 
 2. We want this script to run on the controller VM upon startup so that when we SSH into it, Java and Jenkins are already installed. Open `vms.tf` in the day-1 folder and insert the following into our google_compute_instance.jenkins-controller-vm. 
@@ -195,19 +196,6 @@ You have now configured:
 ## Next steps
 Link to next guide here!
 
-
-
-
-
-
-
-
-
-
-
-http://34.105.128.155:8080/
-decef54614cd4343b1bf9c54eb5a63d1
-
 ## Steps to follow if you are having trouble running Jenkins
 Jenkins won't run on port 8080 if there is already something else using the same port. In this case, let's change the port that Jenkins is running on.
 
@@ -224,7 +212,7 @@ Note: the directory may be different on your machine.
 
 cd into the directory above the .war file
 ```
-/usr/share/java/
+cd /usr/share/java/
 ```
 
 Run the following: 

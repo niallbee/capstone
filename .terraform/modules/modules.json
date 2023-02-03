@@ -1,0 +1,1 @@
+{"Modules":[{"Key":"","Source":"","Dir":"."},{"Key":"jenkins","Source":"./day-1","Dir":"day-1"},{"Key":"web_application","Source":"./day-2/webserver","Dir":"day-2/webserver"},{"Key":"load_balancer","Source":"./day-2/load_balancer","Dir":"day-2/load_balancer"}]}

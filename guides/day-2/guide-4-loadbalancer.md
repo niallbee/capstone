@@ -212,3 +212,9 @@ You can view information about your load balancer and the health of the backend 
 1. Open the GCP console and in the search bar search for "Load Balancing"
 2. Click on "Load balancing" and you will be able to see the "url-map" and the backend health.
 3. Click on the URL map to display more information about the backend service and health.
+
+
+## Testing Failover
+Adding a load balancer and more instances to our infrastructure makes our website more resiliant as if one of the VMs goes down due to an error or for maintenance the website will still be accessible because on of the other instances will still be up hosting the web application. In theory so long as one instance is running the user shouldn't notice if another one goes down as they can still access the website using the IP of the load balancer. 
+
+To test for a failover you can stop on of the VMs in the console and then try to access the website via the load balancer IP

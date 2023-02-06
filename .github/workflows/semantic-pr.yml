@@ -1,0 +1,38 @@
+# GitHub check that ensures PR title is compliant with naming standards
+# See https://github.com/zeke/semantic-pull-requests
+
+name: Check PR title is compliant
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronize
+
+jobs:
+  pr-title-check:
+    if: ${{ !startsWith(github.event.pull_request.head.ref, 'release-please--') }}
+    # Set the agent to run on
+    name: Validate PR title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@91682d013dea3ff257520b9b68c9cb93ced4fe9b
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Configure which types are allowed.
+          # Default: https://github.com/commitizen/conventional-commit-types
+          types: |
+            fix
+            feat
+            chore
+          # The subject must start with a jira number
+          subjectPattern: ^(AUTOMATION|[a-zA-Z]+-((?![0]+)[0-9]+)|release\s+[0-9]+\.[0-9]+\.[0-9]+).*$
+          subjectPatternError: |
+            The subject "{subject}" found in the pull request title "{title}"
+            didn't match the configured pattern. Please ensure that the subject
+            starts with a valid ticket number.
+
+            e.g. "PCPS-123 Reticulated splines" or "AzDo-4567 Something Azurey"
+
+            PLEASE NOTE: PCPS-0000 is NOT a valid Jira!!!

@@ -1,0 +1,81 @@
+---
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronize
+
+jobs:
+  linter:
+    if: ${{ !startsWith(github.event.pull_request.head.ref, 'release-please--') }}
+    # Set the agent to run on
+    name: Lint Code Base
+    # Set the agent to run on
+    runs-on: ubuntu-latest
+
+    ##################
+    # Load all steps #
+    ##################
+    steps:
+      ##########################
+      # Checkout the code base #
+      ##########################
+      - name: Checkout Code
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b
+        with:
+          # Full git history is needed to get a proper list of changed files within `super-linter`
+          fetch-depth: 0
+
+      ##########################
+      # Check Helm code base #
+      ##########################
+      - name: Check Helm Files Existence
+        id: helm_files
+        uses: andstor/file-existence-action@20b4d2e596410855db8f9ca21e96fbe18e12930b
+        with:
+          files: "Chart.yaml, templates/deployment.yaml"
+
+      - if: steps.helm_files.outputs.files_exists == 'true'
+        name: Kube Lint Code Base
+        uses: stackrox/kube-linter-action@ca0d55b925470deb5b04b556e6c4276ea94d03c3
+        id: kube_linter_action_scan
+        with:
+          # Adjust this directory to the location where your kubernetes resources and helm charts are located.
+          directory: ./
+
+      ################################
+      # Set Yaml Lint flag #
+      ################################
+
+      - if: steps.helm_files.outputs.files_exists == 'true'
+        name: Set Yaml Lint Value
+        id: yaml_lint_value
+        run: |
+          ylint_val="false"
+          echo disable_yaml_lint="$ylint_val" >> "${GITHUB_ENV}"
+
+      ################################
+      # Run Linter against code base #
+      ################################
+      - name: Lint Code Base
+        uses: github/super-linter/slim@01d3218744765b55c3b5ffbb27e50961e50c33c5
+        env:
+          DEFAULT_BRANCH: main
+          FILTER_REGEX_EXCLUDE: \.md$
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LINTER_RULES_PATH: .github/linters
+          LOG_LEVEL: ERROR
+          TFE_TOKEN: ${{ secrets.TF_CLOUD_TEAM_API_TOKEN }}
+          VALIDATE_ALL_CODEBASE: true
+          VALIDATE_JSCPD: false
+          VALIDATE_KUBERNETES_KUBEVAL: false
+          VALIDATE_NATURAL_LANGUAGE: false
+          VALIDATE_TERRAFORM_TERRASCAN: false
+          VALIDATE_TERRAFORM_TFLINT: false
+          VALIDATE_XML: false
+          VALIDATE_YAML: ${{ env.disable_yaml_lint }}
+          #Python Linter/Formatter - Enable only PYLINT and BLACK
+          VALIDATE_PYTHON_FLAKE8: false
+          VALIDATE_PYTHON_ISORT: false
+          VALIDATE_PYTHON_MYPY: false

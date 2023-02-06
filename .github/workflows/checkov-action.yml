@@ -1,0 +1,32 @@
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronize
+jobs:
+  checkov-job:
+    if: ${{ !startsWith(github.event.pull_request.head.ref, 'release-please--') }}
+    # Set the agent to run on
+    runs-on: ubuntu-latest
+    name: checkov-action
+
+    ##################
+    # Load all steps #
+    ##################
+    steps:
+      ##########################
+      # Checkout the code base #
+      ##########################
+      - name: Checkout repo
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b
+
+      ################################
+      # Run Checkov against code base #
+      ################################
+      - name: Run Checkov action
+        id: checkov
+        uses: bridgecrewio/checkov-action@7fc86bab49bb1a383576c6298938561551a99bcc
+        with:
+          log_level: ERROR
+          config_file: ./.github/checkov-config.yml

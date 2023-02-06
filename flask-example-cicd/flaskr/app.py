@@ -41,14 +41,9 @@ def primes(count=None):
     return render_template("primes.html", count=str(count),
                            primes=str(pc.primes(count)))
 
-
 @app.route('/database/')
 def database():
     conn = db.db_connection()
     cur = conn.cursor()
-    cur.execute('SELECT * FROM animals;')
-    animals = cur.fetchall()
     conn.close()
     return {"database connection": "successful" }
-
-

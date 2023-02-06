@@ -1,4 +1,4 @@
-# flask-web-app
+# flask-example-cicd
 
 This is a simple python flask application to host a simple web app.
 
@@ -28,19 +28,19 @@ Requirements:
 Build the docker image in the project root folder with:
 
 ```docker
-docker build . -t flask-web-app:latest
+docker build . -t flask-example-cicd:latest
 ```
 
 To **run** the docker image in **interactive mode**:
 
 ```docker
-docker run --rm -it -p 8080:8080/tcp --name flask-example flask-web-app:latest
+docker run --rm -it -p 8080:8080/tcp --name flask-example flask-example-cicd:latest
 ```
 
 To **run** the docker image in **detached mode**:
 
 ```docker
-docker run --rm -d -p 8080:8080/tcp --name flask-example flask-web-app:latest
+docker run --rm -d -p 8080:8080/tcp --name flask-example flask-example-cicd:latest
 ```
 
 You can change the environmental variable for **flask** in the [Dockerfile](Dockerfile), for example you can change the port by changing `ENV FLASK_RUN_PORT=8080`.

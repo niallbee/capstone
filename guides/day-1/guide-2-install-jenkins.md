@@ -14,59 +14,62 @@ Please ensure that you have completed the [Getting Started](https://github.com/l
 We already have the architecture for subnet-1 containing VM1 and VM2 (the architecture for our jenkins controller and agent). We want to write a script for the controller to start up with so it boots with Jenkins and Java installed. Java is required to run Jenkins.
 
 1. Create a new file in day-1 called `jenkins_java_script.sh` and paste the following code. This script first installs Java, then Jenkins.
+   ```
+   #!/bin/bash
+   set -exo pipefail
 
-```
-#!/bin/bash
-set -exo pipefail
+   # This script installs Jenkins and Java. Java is required for Jenkins to run
 
-# This script installs Jenkins and Java. Java is required for Jenkins to run
-
-sudo apt update -y
-sudo apt install openjdk-11-jre
-java -version
-curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo tee   /usr/share/keyrings/jenkins-keyring.asc > /dev/null
-echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc]   https://pkg.jenkins.io/debian-stable binary/ | sudo tee   /etc/apt/sources.list.d/jenkins.list > /dev/null
-sudo apt-get update -y
-sudo apt-get install jenkins
-sudo reboot
-```
+   sudo apt update -y
+   sudo apt install openjdk-11-jre
+   java -version
+   curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo tee   /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+   echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc]   https://pkg.jenkins.io/debian-stable binary/ | sudo tee   /etc/apt/sources.list.d/jenkins.list > /dev/null
+   sudo apt-get update -y
+   sudo apt-get install jenkins
+   sudo reboot
+   ```
 
 2. We want this script to run on the controller VM upon startup so that when we SSH into it, Java and Jenkins are already installed. Open `vms.tf` in the day-1 folder and insert the following into our google_compute_instance.jenkins-controller-vm.
 
-```
-metadata_startup_script = file("./day-1/jenkins_java_script.sh")
-```
-The `metadata_startup_script` is an argument for a `google_compute_instance` resource where the script will run on the instance when it first starts up. Therefore if we provide the instance our Jenkins script, Jenkins and Java will be installed when the VM starts up.
+   ```
+   metadata_startup_script = file("./day-1/jenkins_java_script.sh")
+   ```
+   The `metadata_startup_script` is an argument for a `google_compute_instance` resource where the script will run on the instance when it first starts up. Therefore if we provide the instance our Jenkins script, Jenkins and Java will be installed when the VM starts up.
 
+   To add this change to the VM run
+   ```
+   terraform apply
+   ```
 
 3. SSH into the Jenkins controller (jenkins-controller-vm)
-```
-ssh -i ~/.ssh/myKeyFile testUser@<jenkins-controller-vm EXTERNAL_IP>
-```
-To check that status of Jenkins. Run
-```
-systemctl status jenkins
-```
+   ```
+   ssh -i ~/.ssh/myKeyFile testUser@<jenkins-controller-vm EXTERNAL_IP>
+   ```
+   To check that status of Jenkins. Run
+   ```
+   systemctl status jenkins
+   ```
 
-The output should contain `active (running)`.
+   The output should contain `active (running)`.
 
-If you come across the following error. Please wait a few minutes and try again, it can take some time to run the start up script
-```
-Unit jenkins.service could not be found.
-```
+   If you come across the following error. Please wait a few minutes and try again, it can take some time to run the start up script
+   ```
+   Unit jenkins.service could not be found.
+   ```
 
-If you are having trouble here with Jenkins being stuck on `active(start)` for a long period of time. Please skip the end of the guide for further instructions (section: Steps to follow if you are having trouble running Jenkins)
+   If you are having trouble here with Jenkins being stuck on `active(start)` for a long period of time. Please skip the end of the guide for further instructions (section: Steps to follow if you are having trouble running Jenkins)
 
 4. After installing and running Jenkins, the post-installation setup wizard begins. This setup wizard takes you through a few quick "one-off" steps to unlock Jenkins, customize it with plugins and create the first administrator user through which you can continue accessing Jenkins.
 
-When you first access a new Jenkins instance, you are asked to unlock it using an automatically generated password.
+   When you first access a new Jenkins instance, you are asked to unlock it using an automatically generated password.
 
 5. Browse to `<JENKINS_INSTANCE_EXTERNAL_IP>:8080` and wait until the Unlock Jenkins page appears
 
 6. Back in the Linux session currently open, paste the following command to get the automatically generated password. Copy this password and save it somewhere (you will need this whenever you access the Jenkins UI).
-```
-sudo cat /var/lib/jenkins/secrets/initialAdminPassword
-```
+   ```
+   sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+   ```
 
 ## Creating an admin user for the Jenkins controller (VM1)
 
@@ -80,6 +83,55 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 
 5. You have now set up Jenkins!
 
+## Creating SSH keys for the controller to agent connection
+As mentioned in the previous guide the controller and agent are going to communicate over SSH. To configure this connection we need to generate SSH keys on the controller VM and add the public key to the agent VM
+1. SSH to the controller using the commnad we used before
+   ```
+   ssh -i ~/.ssh/myKeyFile testUser@<jenkins-controller-vm EXTERNAL_IP>
+   ```
+2. You should now be in the jenkins-controller-vm terminal. Similar to how we generated our previous key pair, run the following commands
+   ```
+   cd ~/.ssh
+   ```
+   Then to generate your key pair run the following command in your terminal
+   ```
+   ssh-keygen -t rsa -f ~/.ssh/myKeyFile -C testUser -b 2048
+   ```
+   You will then be prompted to enter a passphrase for your private key and confirm it. It is good practice to add a passphrase as it makes your private key more secure and it is often a requirement set by organisations to connect to their servers. However for this lab it is not required and you can simply press enter twice.
+
+   Once this has run it will create two files: myKeyFile (the private key) and myKeyFile.pub (the public key) in the .ssh directory
+3. To authenticate your connection over SSH to your jenkins-agent-vm machine it will need the public key of your key pair. We can do this by adding the public key file to the jenkins-agent-vm. But first we will need to retrieve the contents of your public key file. In your terminal run the following command:
+   ```
+   cat ~/.ssh/myKeyFile.pub
+   ```
+   This will output the contents of the public key file into the terminal. Copy the entire contents of the file from `ssh-rsa` to `testUser` inclusive.
+   Type `exit` to exit the VM session.
+
+4. In `vms.tf` of the `day-1` folder, in the `jenkins_agent_vm` resource block, add the following block of code to add the copied SSH key onto the jenkins-agent-vm. This will allow SSH access from the jenkins-controller-vm into the jenkins-agent-vm.
+   ```
+   metadata = {
+       ssh-keys = "testUser:<SSH KEY HERE>"
+     }
+   ```
+5. To add the change to the configuration in the terminal, run
+   ```
+   terraform plan
+   ```
+   You should see `0 to add, 1 change, 0 to destroy`. Where the change is the addition of the SSH key. If you're happy with the plan, run
+   ```
+   terraform apply
+   ```
+   This should add the new SSH key to the jenkins_agent_vm.
+6. To test the connectivity to the jenkins-agent-vm, we first must SSH back into the jenkins-controller-vm.
+   ```
+   ssh -i ~/.ssh/myKeyFile testUser@<EXTERNAL_IP>
+   ```
+   Run the following command to test the SSH connection from our jenkins-controller-vm to our jenkins-agent-vm. Where the <INTERNAL_IP> is the internal IP of the jenkins-agent-vm.
+   ```
+   ssh -i ~/.ssh/myKeyFile testUser@<INTERNAL_IP>
+   ```
+
+
 ## Configure VM2 as a permanent agent
 
 1. Click `start using Jenkins` if you are still in the Jenkins wizard. Otherwise go to the Jenkins URL you copied.
@@ -87,53 +139,53 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 2. Enter the admin username (it should be admin), and the password you used to access the setup wizard.
 
 3. A prerequisite of the next steps is that the Jenkins agent must have Java installed. SSH into the jenkins agent (jenkins-agent-vm) and install java
-```
-ssh -i ~/.ssh/myKeyFile testUser@<jenkins-agent-vm INTERNAL_IP>
-sudo apt update
-sudo apt install openjdk-11-jre -y
-```
+   ```
+   ssh -i ~/.ssh/myKeyFile testUser@<jenkins-agent-vm INTERNAL_IP>
+   sudo apt update
+   sudo apt install openjdk-11-jre -y
+   ```
 
 ## Creating a new user
 
 1. Still inside of the jenkins agent terminal, create a jenkins user and password using the following command
-```
-sudo adduser jenkins --shell /bin/bash
-```
+   ```
+   sudo adduser jenkins --shell /bin/bash
+   ```
 
-Type a password when prompted. E.g. password: jenkins. The above commands should create a user and a home directory names jenkins under `/home`.
+   Type a password when prompted. E.g. password: jenkins. The above commands should create a user and a home directory names jenkins under `/home`.
 
 2. Now login as the jenkins user using the password just created
-```
-su jenkins
-```
+   ```
+   su jenkins
+   ```
 
 3. Create a `jenkins_slave` directory under /home/jenkins
-```
-mkdir /home/jenkins/jenkins_slave
-```
+   ```
+   mkdir /home/jenkins/jenkins_slave
+   ```
 
 ## Setting up Jenkins slave using ssh keys
 
 1. While logged into the agent VM as the jenkins user, cd into the .ssh directory
-```
-cd ~/.ssh
-```
+   ```
+   cd ~/.ssh
+   ```
 
 2. Create an ssh key pair using the following command. Press enter for all defaults when prompted
-```
-ssh-keygen -t rsa -C "The access key for Jenkins slaves"
-```
+   ```
+   ssh-keygen -t rsa -C "The access key for Jenkins slaves"
+   ```
 
 3. Add the public key to `authorized_keys` using the following command
-```
-cat id_rsa.pub >> ~/.ssh/authorized_keys
-```
+   ```
+   cat id_rsa.pub >> ~/.ssh/authorized_keys
+   ```
 
 4. Now copy the contents of the private key and paste it in a notepad.
 -----BEGIN RSA PRIVATE KEY----- and -----END RSA PRIVATE KEY----- inclusive.
-```
-cat id_rsa
-```
+   ```
+   cat id_rsa
+   ```
 
 ## Adding the SSH Private Key to Jenkins Credentials
 1. Go to the jenkins dashboard UI in the browser (you should have noted this down earlier). Go to Manage Jenkins -> Manage Credentials. Click `(global)` and click 'Add credentials'.

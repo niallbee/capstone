@@ -1,0 +1,63 @@
+name: Github Actions Manager
+
+on:
+  schedule:
+    - cron: "0 0 * * 0" # At 00:00 on Sunday.
+  workflow_dispatch:
+
+jobs:
+  Github-Actions-Manager:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current repo
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b
+
+      - name: Get latest Actions Manager Repo Releases
+        run: |
+          ACT_MAN_RELEASE=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.ACTIONS_MANAGER }}" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/lbg-cloud-platform/lcp-github-actions-manager/releases | jq -r '.[0].tag_name')
+          ACT_MAN_WORKFLOWS_RELEASE=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.ACTIONS_MANAGER }}" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/lbg-cloud-platform/lcp-github-actions-manager-workflow-packages/releases | jq -r '.[0].tag_name')
+          echo "ACT_MAN_RELEASE=${ACT_MAN_RELEASE}" >> "$GITHUB_ENV"
+          echo "ACT_MAN_WORKFLOWS_RELEASE=${ACT_MAN_WORKFLOWS_RELEASE}" >> "$GITHUB_ENV"
+
+      - name: Checkout Actions Manager Workflow Packages
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b
+        with:
+          repository: lbg-cloud-platform/lcp-github-actions-manager-workflow-packages
+          path: lcp-github-actions-manager-workflow-packages
+          token: ${{ secrets.ACTIONS_MANAGER }}
+          ref: ${{ env.ACT_MAN_WORKFLOWS_RELEASE }}
+
+      - name: Checkout Actions Manager
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b
+        with:
+          repository: lbg-cloud-platform/lcp-github-actions-manager
+          path: lcp-github-actions-manager
+          token: ${{ secrets.ACTIONS_MANAGER }}
+          ref: ${{ env.ACT_MAN_RELEASE }}
+
+      - name: Set Up Python
+        uses: actions/setup-python@b55428b1882923874294fa556849718a1d7f2ca5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+
+      - name: Run Github Actions Manager
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pip install -r lcp-github-actions-manager/actions-manager/requirements.txt
+          python3 lcp-github-actions-manager/actions-manager/actions_manager.py -r ${{ github.repository }}
+
+      - name: Post Actions Manager Clean-up
+        run: |
+          rm -rf lcp-github-actions-manager-workflow-packages/
+          rm -rf lcp-github-actions-manager/
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@671dc9c9e0c2d73f07fa45a3eb0220e1622f0c5f
+        with:
+          token: ${{ secrets.ACTIONS_MANAGER_PR }}
+          commit-message: "chore: AUTOMATION Github Actions Manager [skip-ci]"
+          branch: chore/actions-manager
+          delete-branch: true
+          title: "chore: AUTOMATION Github Actions Manager [skip-ci]"

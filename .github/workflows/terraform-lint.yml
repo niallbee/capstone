@@ -1,0 +1,45 @@
+# Lints terraform code
+# See https://github.com/terraform-linters/tflint
+
+name: Terraform Lint
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronize
+
+jobs:
+  tflint:
+    if: ${{ !startsWith(github.event.pull_request.head.ref, 'release-please--') }}
+    # Set the agent to run on
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b
+        name: Checkout source code
+
+      - uses: actions/cache@fd5de65bc895cf536527842281bea11763fefd77
+        name: Cache plugin dir
+        with:
+          path: ~/.tflint.d/plugins
+          key: ubuntu-latest-tflint-${{ hashFiles('.tflint.hcl') }}
+
+      - uses: terraform-linters/setup-tflint@444635365d380c7363d1eaee4267317c2445717d
+        name: Setup TFLint
+        with:
+          tflint_version: v0.39.3 # SHA: 8829c28e0dbbb8092ea81e39663ab5cdc0984c40
+
+      - name: Show version
+        run: tflint --version
+
+      - name: Init TFLint
+        run: tflint --init
+
+      - name: Run TFLint
+        run: tflint -f compact
+
+      - name: Terraform fmt
+        id: fmt
+        run: terraform fmt --check
+        continue-on-error: false

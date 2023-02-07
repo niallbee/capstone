@@ -1,0 +1,14 @@
+on:
+  push:
+    branches:
+      - main
+
+name: release-please
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: google-github-actions/release-please-action@63e061f3b436fbc111f606306d62866a240ea760
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          release-type: "terraform-module"

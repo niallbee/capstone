@@ -4,7 +4,7 @@ resource "google_compute_instance" "webserver" {
   machine_type = "e2-small"
   zone         = "${var.region}-b"
 
-  tags = ["allow-health-check"]
+  tags = ["allow-health-check","allow-internal-ssh-target"]
 
   boot_disk {
     initialize_params {

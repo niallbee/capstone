@@ -7,26 +7,23 @@ This session expands upon the architecture in subnet 2 by adding a load balancer
 - Outputting values from a module
 - Creating multiple resources using a count
 
+
 ## Prerequisites
 To follow this guide you should have completed [Guide 3](LINK) as we will be adding a load balancer to the infrastructure we created.
 
 If you added a external IP and the target tag "allow-http" to the webserver when completing Guide 3 please make sure to remove the `access_config` block and the `tags` argument from the `google_compute_instance` resource block in the `webserver.tf` file in `capstone-project/day-2/webserver` directory. Then apply the change by running `terraform apply`
 
-## Getting Started 
-1. Open your playpen repo in VS Code checkout the branch you used in the previous session
-
-2. You should already be authenticated with GCP and Terraform Cloud from completing the previous Guide 1. If you would like a you would like a refresher please look at [Getting Started - Guide 1](LINK)
-
 
 ## Setting up the project
-Within the `capstone-project/day-2` create a new folder called `load_balancer`. In the `load_balancer` folder create the following files 
+Within the `capstone-project/day-2` create a new folder called `load_balancer`. In the `load_balancer` folder create the following files
     - `backend_service.tf`
-    - `load_balancer.tf` 
-    - `variables.tf` 
+    - `load_balancer.tf`
+    - `variables.tf`
     - `outputs.tf`
 
+
 ## Creating multiple webservers
-To make our application more scalable we can introduce more webservers to our configuration. This means that there will be more webservers to handle traffic to our website allowing more users to access the site at once. We can then place a load balancer in front of our webservers so that users enter the IP of the load balancer to view the website and then the traffic is routed to the webservers. 
+To make our application more scalable we can introduce more webservers to our configuration. This means that there will be more webservers to handle traffic to our website allowing more users to access the site at once. We can then place a load balancer in front of our webservers so that users enter the IP of the load balancer to view the website and then the traffic is routed to the webservers.
 1. To create two copies of our VMs we can introduce the `count` argument to the `google_compute_instance` resource block. Insert the following line in the `google_compute_instance` resource block in `webserver.tf` in the `day-2/webserver` folder
    ```
    count        = 2
@@ -41,42 +38,42 @@ To make our application more scalable we can introduce more webservers to our co
    output "webserver_1_id" {
      value = google_compute_instance.webserver[0].id
    }
-   
+
    output "webserver_2_id" {
      value = google_compute_instance.webserver[1].id
    }
    ```
    This will output the webserver IDs from the `web_application` module so that these values are accessible from our main configuration file in the `capstone-project` folder.
-4. Now that we have added these changes to the `web_application` module run 
+4. Now that we have added these changes to the `web_application` module run
    ```
    terraform apply
-   ``` 
+   ```
    To deploy them
 
 
 ## Creating the Backend Service
-A backend service defines a group of VMs that will serve traffic from a load balancer. A backend service uses an instance group of which there are two types: managed and unmanaged. 
+A backend service defines a group of VMs that will serve traffic from a load balancer. A backend service uses an instance group of which there are two types: managed and unmanaged.
 
-A managed instance group is a group of VMs that is managed by GCP based on parameters that you set. This means that you define a compute instance template which declares the configuration of the VMs you want and when there is sufficient demand GCP will deploy VMs based on this template. This results in a group of identical VMs the increase and decrease in number based on the demand of the user and the parameter you set (e.g. if CPU use is above 50% deploy a new VM). This is known as **auto scaling**. 
+A managed instance group is a group of VMs that is managed by GCP based on parameters that you set. This means that you define a compute instance template which declares the configuration of the VMs you want and when there is sufficient demand GCP will deploy VMs based on this template. This results in a group of identical VMs that increase and decrease in number based on the demand of the user and the parameter you set (e.g. if CPU use is above 50% deploy a new VM). This is known as **auto scaling**.
 
-An unmanaged instance group is a group of VMs that have been deployed and configured by you and only increase or decrease in number if you add more VMs yourself. This means that it doesn't auto-scale to suit demand. However we are going to use an unmanaged instance group for our purposes as we will not have enough traffic to our website to require auto-scaling. 
+An unmanaged instance group is a group of VMs that have been deployed and configured by you and only increase or decrease in number if you add more VMs yourself. This means that it doesn't auto-scale to suit demand. However we are going to use an unmanaged instance group for our purposes as we will not have enough traffic to our website to require auto-scaling.
 
 1. To create our instance group insert the following code block into `backend_service.tf` in the `day-2/load_balancer` folder
    ```
    resource "google_compute_instance_group" "webservers" {
      name = "python-webservers"
      zone = "${var.region}-b"
-   
+
      instances = [
        var.webserver_1_id,
        var.webserver_2_id,
      ]
-   
+
      named_port {
        name = "http"
        port = "8080"
      }
-   }  
+   }
    ```
 2. We now want to add our instance group to a backend service. Insert the following code block into `backend_service.tf` in the `day-2/load_balancer` folder
    ```
@@ -85,17 +82,17 @@ An unmanaged instance group is a group of VMs that have been deployed and config
      port_name   = "http"
      protocol    = "HTTP"
      timeout_sec = 10
-   
+
      health_checks = [google_compute_health_check.healthcheck.id]
-   
+
      backend {
        group                 = google_compute_instance_group.webservers.self_link
        balancing_mode        = "RATE"
        max_rate_per_instance = 100
      }
-   } 
+   }
    ```
-3. To ensure that our webservers are able to recieve the HTTP traffic we want to create a health check. Health checks regularly poll instances to ensure that they are able to recieve traffic by sending health probes over a designated port. If the health probe doesn't reach the instance successfully the instance is marked as "unhealthy" and traffic from the load balancer will not be sent to that instance. To create the health check insert the following code block into `backend_service.tf` in the `day-2/load_balancer` folder 
+3. To ensure that our webservers are able to recieve the HTTP traffic we want to create a health check. Health checks regularly poll instances to ensure that they are able to recieve traffic by sending health probes over a designated port. If the health probe doesn't reach the instance successfully the instance is marked as "unhealthy" and traffic from the load balancer will not be sent to that instance. To create the health check insert the following code block into `backend_service.tf` in the `day-2/load_balancer` folder
    ```
    resource "google_compute_health_check" "healthcheck" {
      name                = "http-health-check"
@@ -125,31 +122,31 @@ An unmanaged instance group is a group of VMs that have been deployed and config
    ```
    The source ranges we use here are for the Google Cloud health checking systems which will be the origin of the health probes. To allow them to reach our VMs we need to add the tag allow-health-check. In `webserver.tf` in the `day-2/webserver` folder insert the following line into the google_compute_instance resource block so that it looks like this
    ```
-   tags = ["allow-health-check"] 
+   tags = ["allow-health-check"]
    ```
 
 ## Creating the Load Balancer
 Now that we have set up our backend service we need to introduce a load balancer. Because our VMs only have private IPs we need to provide an external IP in the form of a load balancer so that users can access our website. For our purposes we are going to use a global external HTTP load balancer.
-1. Insert the following code blocks into `load_balancer.tf` in the `day-2/load_balancer` folder 
+1. Insert the following code blocks into `load_balancer.tf` in the `day-2/load_balancer` folder
    ```
    resource "google_compute_url_map" "url_map" {
      name            = "url-map"
      default_service = google_compute_backend_service.webserver_backend.id
    }
-   
+
    resource "google_compute_target_http_proxy" "http_proxy" {
      name    = "http-proxy"
      url_map = google_compute_url_map.url_map.id
    }
-   
+
    resource "google_compute_global_forwarding_rule" "forwarding_rule" {
      name       = "web-app-forwarding-rule"
      target     = google_compute_target_http_proxy.http_proxy.self_link
      port_range = "8080"
    }
    ```
-   Here the `google_compute_global_forwarding_rule` represents the load balancer - it creates the IP and is the inititail resource that HTTP requests to our website will hit. Our traffic will then be routed via the `google_compute_target_http_proxy` to the `google_compute_url_map` which will distribute the requests to the backend service.
-2. We will need the IP of our load balancer to access the website so let's create an output so that we can access it easily. In `output.tf` in the `day-2/load_balancer` folder insert the following code block]
+   Here the `google_compute_global_forwarding_rule` represents the load balancer - it creates the IP and is the initial resource that HTTP requests to our website will hit. Our traffic will then be routed via the `google_compute_target_http_proxy` to the `google_compute_url_map` which will distribute the requests to the backend service.
+2. We will need the IP of our load balancer to access the website so let's create an output so that we can access it easily. In `output.tf` in the `day-2/load_balancer` folder insert the following code block
    ```
    output "load_balancer_ip" {
      value = google_compute_global_forwarding_rule.forwarding_rule.ip_address
@@ -157,17 +154,17 @@ Now that we have set up our backend service we need to introduce a load balancer
    ```
 
 ## Calling the module and deploying the infrastructure
-Now that we have created the infrastructure for our module lets configure the variables and call it in our main configuration file. 
+Now that we have created the infrastructure for our module lets configure the variables and call it in our main configuration file.
 1. Insert the following code blocks into `variables.tf` in the `day-2/load_balancer` folder
    ```
    variable "region" {
        type = string
    }
-   
+
    variable "webserver_1_id" {
        type = string
    }
-   
+
    variable "webserver_2_id" {
        type = string
    }
@@ -189,7 +186,7 @@ Now that we have created the infrastructure for our module lets configure the va
        value = module.load_balancer.load_balancer_ip
    }
    ```
-4. Now we are ready to deploy our load balancer. First run 
+4. Now we are ready to deploy our load balancer. First run
    ```
    terraform init
    ```
@@ -203,7 +200,7 @@ Now that we have created the infrastructure for our module lets configure the va
    ```
 
 ## Viewing the NGINX homepage
-Now that we have deployed our load balancer we can use it to view the NGINX webpage that we deployed on the VMs. 
+Now that we have deployed our load balancer we can use it to view the NGINX webpage that we deployed on the VMs.
 
 Copy the IP of the load balancer from the output in the terminal where you ran the terraform apply and paste it into the web browser along with the port like below
    ```
@@ -219,10 +216,10 @@ You can view information about your load balancer and the health of the backend 
 
 
 ## Testing Failover
-Adding a load balancer and more instances to our infrastructure makes our website more resiliant as if one of the VMs goes down due to an error or for maintenance the website will still be accessible because one of the other instances will still be up hosting the web application. In theory so long as one instance is running the user shouldn't notice if another one goes down as they can still access the website using the IP of the load balancer. 
+Adding a load balancer and more instances to our infrastructure makes our website more resiliant as if one of the VMs goes down due to an error or for maintenance the website will still be accessible because one of the other instances will still be up hosting the web application. In theory so long as one instance is running the user shouldn't notice if another one goes down as they can still access the website using the IP of the load balancer.
 
-To test for a failover you can stop one of the VMs in the console and then try to access the website via the load balancer IP. 
+To test for a failover you can stop one of the VMs in the console and then try to access the website via the load balancer IP.
 
 1. To do this go to the GCP console and in the search bar search for "Compute Engine"
-2. Next to one of the webservers you will see three dots click on that and in the menu that pops up click on "stop" After a few minutes the webserver will be stopped. 
-3. Once it has stopped try accessing the website again by using `<LOAD BALANCER IP>:8080`. You should be able to access it with no issues. 
+2. Next to one of the webservers you will see three dots click on that and in the menu that pops up click on "stop" After a few minutes the webserver will be stopped.
+3. Once it has stopped try accessing the website again by using `<LOAD BALANCER IP>:8080`. You should be able to access it with no issues.

@@ -7,15 +7,12 @@ This session will create the architecture for subnet 2 of the Capstone project. 
 - Postgres database
 - Firewall rules
 
-This session will create a new module for the webserver and its database.
+This session will create a new module for the webserver and its database. The webserver deployed here will be used to host a python web application that will be able to connect to the postgres database. We will deploy the web app as part of the Jenkins pipeline on day 3.
 
 ## Prerequisites
-Before completing this session you should have completed guide 1 as this contains the inital set up of our Terraform configuration.
+Before completing this session you should have completed [Guide 1](LINK) as this contains the inital set up of our Terraform configuration.
 
-## Getting Started
-1. Open your playpen repo in VS Code checkout the branch you used in the previous session
-
-2. You should already be authenticated with GCP and Terraform Cloud from completing the previous Guide 1. If you would like a you would like a refresher please look at [Getting Started - Guide 1](LINK)
+Please ensure that you have completed the [Getting Started](https://github.com/lbg-cloud-platform/playpen-incubationlab-capstone-project/blob/main/README.md) section and are on the branch you created with the folder `capstone-project`
 
 
 ## Setting up the project
@@ -73,6 +70,8 @@ To create a webserver we are going to deploy a compute engine that installs NGIN
      machine_type = "e2-small"
      zone         = "${var.region}-b"
 
+     tags         = ["allow-internal-ssh-target"]
+
      boot_disk {
        initialize_params {
          image = "ubuntu-os-cloud/ubuntu-1804-lts"
@@ -84,7 +83,7 @@ To create a webserver we are going to deploy a compute engine that installs NGIN
      }
    }
    ```
-   This creates a Linux VM runninng Ubuntu 18. This VM will only have a private IP as we haven't allocated an external IP.
+   This creates a Linux VM runninng Ubuntu 18. This VM will only have a private IP as we haven't allocated an external IP. This makes the instance more secure as it will be much harder for a external party to access the instance as they would have to be in our network to use the internal IP.
 
 ### Creating a script to install NGINX
 To turn our Linux VM into a webserver we need to install a webserver application onto it. We can do this with a start up script that will run when the VM boots up. For this exercise we are going to use NGINX. [NGINX](https://nginx.org/en/docs/) is an open source lightweight webserver that is easy to configure making it it ideal for testing the connectivity of your infrastructure.
@@ -94,7 +93,7 @@ To turn our Linux VM into a webserver we need to install a webserver application
    #!/bin/bash
    set -exo pipefail
    ```
-   The first line sets the default shell for the script to be executed in as bash. The second line ensures that our script will output the executed commands to the terminal and that the if an error is encounted it will immediately exit and return the error code. These lines are best practice for bash scripts.
+   The first line sets the default shell for the script to be executed in as bash. The second line ensures that our script will output the executed commands to the terminal and that if an error is encounted it will immediately exit and return the error code. These lines are best practice for bash scripts.
 3. Next in `nginx_startup.sh` insert the following lines
    ```
    sudo apt-get update -y
@@ -196,7 +195,7 @@ To use with our web application we are going to deploy a [PostgreSQL](https://ww
      reserved_peering_ranges = [google_compute_global_address.private_ip_address.name]
    }
    ```
-4. Now that the databse has been configured and the private connection established we can can create a [user](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/sql_user) for our web application so that it can access the database. Insert the following code block into `database.tf` in the `day-2/webserver` folder
+4. Now that the database has been configured and the private connection established we can can create a [user](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/sql_user) for our web application so that it can access the database. Insert the following code block into `database.tf` in the `day-2/webserver` folder
    ```
    resource "google_sql_user" "user" {
      name     = "application-user"

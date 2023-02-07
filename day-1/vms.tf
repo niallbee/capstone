@@ -4,7 +4,7 @@ resource "google_compute_instance" "jenkins_controller_vm" {
   machine_type = "e2-small"
   zone         = "${var.region}-b"
 
-  tags = ["allow-external-ssh", "allow-http"]
+  tags = ["allow-external-ssh", "allow-http","allow-internal-ssh-source"]
 
   boot_disk {
     initialize_params {
@@ -33,7 +33,7 @@ resource "google_compute_instance" "jenkins_agent_vm" {
   machine_type = "e2-small"
   zone         = "${var.region}-b"
 
-  tags = ["allow-internal-ssh"]
+  tags = ["allow-internal-ssh-target","allow-internal-ssh-source"]
 
   boot_disk {
     initialize_params {

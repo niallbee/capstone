@@ -18,8 +18,8 @@ resource "google_sql_database_instance" "postgres" {
 
 # Create database, user name and password
 resource "random_password" "db_password" {
-    length = 10 
-    special = true
+  length  = 10
+  special = true
 }
 
 resource "google_sql_user" "user" {
@@ -29,6 +29,6 @@ resource "google_sql_user" "user" {
 }
 
 resource "google_sql_database" "python_app" {
-    name = "application"
-    instance = google_sql_database_instance.postgres.name
+  name     = "application"
+  instance = google_sql_database_instance.postgres.name
 }

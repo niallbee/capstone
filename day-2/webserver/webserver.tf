@@ -15,7 +15,7 @@ resource "google_compute_instance" "webserver" {
     network    = var.vpc_name
     subnetwork = var.subnet_2_name
   }
-  
+
   metadata_startup_script = file("./day-2/webserver/nginx_startup.sh")
 
 }

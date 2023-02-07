@@ -8,7 +8,7 @@ variable "vpc_name" {
 
 variable "vpc_id" {
   type = string
-  
+
 }
 
 variable "subnet_2_name" {

@@ -6,13 +6,13 @@ terraform {
     }
   }
 
-    cloud {
+  cloud {
     organization = "lbg-cloud-platform"
 
     workspaces {
-            name = "<YOUR WORKSPACE HERE>"
-        }
-    }   
+      name = "<YOUR WORKSPACE HERE>"
+    }
+  }
 }
 
 provider "google" {

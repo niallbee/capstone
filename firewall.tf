@@ -18,9 +18,9 @@ resource "google_compute_firewall" "allow_internal_ssh" {
     protocol = "tcp"
     ports    = ["22"]
   }
-  target_tags   = ["allow-internal-ssh"]
+  target_tags = ["allow-internal-ssh"]
   source_tags = ["allow-external-ssh"]
-  
+
 }
 
 resource "google_compute_firewall" "allow_http" {

@@ -12,18 +12,18 @@ This session will create a new module for the webserver and its database.
 ## Prerequisites
 Before completing this session you should have completed guide 1 as this contains the inital set up of our Terraform configuration.
 
-## Getting Started 
+## Getting Started
 1. Open your playpen repo in VS Code checkout the branch you used in the previous session
 
 2. You should already be authenticated with GCP and Terraform Cloud from completing the previous Guide 1. If you would like a you would like a refresher please look at [Getting Started - Guide 1](LINK)
 
 
 ## Setting up the project
-Within the `capstone-project` folder create a new folder called `day-2`. Within the `day-2` folder create a folder called `webserver`. In the `webserver` folder create the following files 
+Within the `capstone-project` folder create a new folder called `day-2`. Within the `day-2` folder create a folder called `webserver`. In the `webserver` folder create the following files
     - `networking.tf`
-    - `webservertf` 
-    - `database.tf` 
-    - `variables.tf` 
+    - `webservertf`
+    - `database.tf`
+    - `variables.tf`
 
 
 ## Creating Subnet 2
@@ -37,31 +37,31 @@ resource "google_compute_subnetwork" "subnet_2" {
   network       = google_compute_network.vpc_network.id
 }
 ```
-This will create a private subnet for our webserver VM. 
+This will create a private subnet for our webserver VM.
 
 
 ## Deploying a Webserver
-To create a webserver we are going to deploy a compute engine that installs NGINX on start up. There are many ways to host a [webserver on GCP](https://cloud.google.com/solutions/web-hosting) all with their own advantages and disadvantages. 
+To create a webserver we are going to deploy a compute engine that installs NGINX on start up. There are many ways to host a [webserver on GCP](https://cloud.google.com/solutions/web-hosting) all with their own advantages and disadvantages.
 
 1. First we need to declare the variables that our webserver module will need just as we did for the Jenkins module. In `variables.tf` in the `day-2/webserver` folder insert the following code blocks
    ```
    variable "region" {
      type = string
    }
-   
+
    variable "vpc_name" {
      type = string
    }
-   
+
    variable "vpc_id" {
      type = string
-     
+
    }
-   
+
    variable "subnet_2_name" {
      type = string
    }
-   
+
    variable "subnet_2_id" {
      type = string
    }
@@ -72,7 +72,7 @@ To create a webserver we are going to deploy a compute engine that installs NGIN
      name         = "python-web-server"
      machine_type = "e2-small"
      zone         = "${var.region}-b"
-   
+
      boot_disk {
        initialize_params {
          image = "ubuntu-os-cloud/ubuntu-1804-lts"
@@ -84,10 +84,10 @@ To create a webserver we are going to deploy a compute engine that installs NGIN
      }
    }
    ```
-   This creates a Linux VM runninng Ubuntu 18. This VM will only have a private IP as we haven't allocated an external IP. 
+   This creates a Linux VM runninng Ubuntu 18. This VM will only have a private IP as we haven't allocated an external IP.
 
 ### Creating a script to install NGINX
-To turn our Linux VM into a webserver we need to install a webserver application onto it. We can do this with a start up script that will run when the VM boots up. For this exercise we are going to use NGINX. [NGINX](https://nginx.org/en/docs/) is an open source lightweight webserver that is easy to configure making it it ideal for testing the connectivity of your infrastructure. 
+To turn our Linux VM into a webserver we need to install a webserver application onto it. We can do this with a start up script that will run when the VM boots up. For this exercise we are going to use NGINX. [NGINX](https://nginx.org/en/docs/) is an open source lightweight webserver that is easy to configure making it it ideal for testing the connectivity of your infrastructure.
 1. In the `day-2/webserver` folder create a file called `nginx_startup.sh`
 2. In `nginx_startup.sh` insert the following lines
    ```
@@ -97,17 +97,17 @@ To turn our Linux VM into a webserver we need to install a webserver application
    The first line sets the default shell for the script to be executed in as bash. The second line ensures that our script will output the executed commands to the terminal and that the if an error is encounted it will immediately exit and return the error code. These lines are best practice for bash scripts.
 3. Next in `nginx_startup.sh` insert the following lines
    ```
-   sudo apt-get update
-   sudo apt install nginx -y  
+   sudo apt-get update -y
+   sudo apt install nginx -y
    ```
-   The first line updates the Ubuntu OS ensuring we have all the latest packages. This is good practice when you deploy a VM as the image you are using may not be up to date and so may not have the latest patches. 
-   The second line installs the NGINX webserver. The `-y` means that the command will not wait for you to approve the installation of NGINX. This is important to include in a start up script as without it the script would "hang" waiting for your input and not run to completion. 
+   The first line updates the Ubuntu OS ensuring we have all the latest packages. This is good practice when you deploy a VM as the image you are using may not be up to date and so may not have the latest patches.
+   The second line installs the NGINX webserver. The `-y` means that the command will not wait for you to approve the installation of NGINX. This is important to include in a start up script as without it the script would "hang" waiting for your input and not run to completion.
 4. Finally in `nginx_startup.sh` insert the following lines
    ```
    sudo sed -i "/listen 80 default_server;/c\listen 8080 default_server;" /etc/nginx/sites-enabled/default
    sudo systemctl restart nginx
    ```
-   This first line uses [sed](https://www.gnu.org/software/sed/manual/sed.html) to replace the line "listen 80 default_server" with "listen 8080 default_server;". This reconfigures NGINX to listen on port 8080 rather than port 80. We have done this because we want to test connectivity over port 8080 as the python web application that we want to deploy runs on port 8080. 
+   This first line uses [sed](https://www.gnu.org/software/sed/manual/sed.html) to replace the line "listen 80 default_server" with "listen 8080 default_server;". This reconfigures NGINX to listen on port 8080 rather than port 80. We have done this because we want to test connectivity over port 8080 as the python web application that we want to deploy runs on port 8080.
    The second line restarts the NGINX server to implement the change to the server to listen on port 8080.
 
 ### Adding the start up script to the VM
@@ -115,7 +115,7 @@ Now that we have created our start up script we need to add it to our compute in
 ```
   metadata_startup_script = file("./day-2/webserver/nginx_startup.sh")
 ```
-This line passes the script file to the metadata as a start up script and passes through the values of the database IP, username and password from the Terraform configuration. 
+This line passes the script file to the metadata as a start up script and passes through the values of the database IP, username and password from the Terraform configuration.
 
 
 ## Creating a NAT router
@@ -135,7 +135,7 @@ A NAT (Network Address Translation) router enables devices without a public IP t
      network = data.google_compute_network.vpc_network.id
      region  = "europe-west2"
    }
-   
+
     resource "google_compute_router_nat" "nat" {
       name                               = "my-router-nat"
       router                             = google_compute_router.nat_router.name
@@ -156,7 +156,7 @@ A NAT (Network Address Translation) router enables devices without a public IP t
 
 
 ## Creating the Postgres database
-To use with our web application we are going to deploy a [PostgreSQL](https://www.postgresql.org) database which is an open source relational database. To deploy the database we are going to use a [cloud SQL](https://cloud.google.com/sql) instance. This is a fully managed relational database service provided by GCP. 
+To use with our web application we are going to deploy a [PostgreSQL](https://www.postgresql.org) database which is an open source relational database. To deploy the database we are going to use a [cloud SQL](https://cloud.google.com/sql) instance. This is a fully managed relational database service provided by GCP.
 
 1. To create the [sql database instance](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/sql_database_instance) insert the following code block into `database.tf` in the `day-2/webserver` folder
    ```
@@ -164,10 +164,10 @@ To use with our web application we are going to deploy a [PostgreSQL](https://ww
      name             = "capstone-postgres-instance"
      database_version = "POSTGRES_14"
      region           = var.region
-   
+
      settings {
        tier = "db-f1-micro"
-   
+
        ip_configuration {
          ipv4_enabled    = "false"
          private_network = var.vpc_id
@@ -194,8 +194,8 @@ To use with our web application we are going to deploy a [PostgreSQL](https://ww
      network                 = data.google_compute_network.vpc_network.id
      service                 = "servicenetworking.googleapis.com"
      reserved_peering_ranges = [google_compute_global_address.private_ip_address.name]
-   }  
-   ``` 
+   }
+   ```
 4. Now that the databse has been configured and the private connection established we can can create a [user](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/sql_user) for our web application so that it can access the database. Insert the following code block into `database.tf` in the `day-2/webserver` folder
    ```
    resource "google_sql_user" "user" {
@@ -207,9 +207,9 @@ To use with our web application we are going to deploy a [PostgreSQL](https://ww
 5. To ensure a secure password for the database user we should randomly generate it. Terraform provides a resource for this called [random passsword](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password). To create the random password insert the following code block into `database.tf` in the `day-2/webserver` folder`
    ```
    resource "random_password" "db_password" {
-       length = 10 
+       length = 10
        special = true
-   }  
+   }
    ```
 6. We also want to create a database in our Postgres instance for our webserver to use. Insert the following code block into `database.tf` in the `day-2/webserver` folder
    ```
@@ -232,7 +232,7 @@ Now that we have created the Terraform code for our webserver module we can call
    }
    ```
    This module block declares a module that will be refered to as `web_application` in the Terraform configuration files. We use the `source` argument to tell Terraform where to find the module (in our case the `day-2/webseerver` folder). Then we assign values to the variables that we declared in step one using `variable name = value`
-2. Now we are ready to deploy our webserver and database infrastructure. First run 
+2. Now we are ready to deploy our webserver and database infrastructure. First run
    ```
    terraform init
    ```
@@ -244,7 +244,7 @@ Now that we have created the Terraform code for our webserver module we can call
    ```
    terraform apply
    ```
-   This will take ~15 - 20 minutes to deploy. 
+   This will take ~15 - 20 minutes to deploy.
 
 ## Viewing the NGINX homepage
 Now that the infrastructure is deployed we want to view the NGINX homepage so that we know that all the connectivity is working correctly. However we have deployed our webserver into a private subnet with no external IP. This means there are two options open to use to view the webpage:
@@ -270,5 +270,3 @@ The first option is more simplistic but less secure but we will use here to test
    <EXTERNAL IP>:8080
    ```
    You should be greeted with a "Welcome to nginx!" page.
-
-

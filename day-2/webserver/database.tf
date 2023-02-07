@@ -1,27 +1,25 @@
+# Create database instance
 resource "google_sql_database_instance" "postgres" {
   name             = "capstone-postgres-instance"
   database_version = "POSTGRES_14"
-  region = var.region
+  region           = var.region
 
   settings {
     tier = "db-f1-micro"
 
     ip_configuration {
-
-       authorized_networks {
-        name  = "web-server"
-        value = google_compute_address.webserver_ip.address
-        }
-        
-      }
+      ipv4_enabled    = "false"
+      private_network = var.vpc_id
     }
-
+  }
+  depends_on          = [google_service_networking_connection.private_db_connector]
   deletion_protection = false
 }
 
+# Create database, user name and password
 resource "random_password" "db_password" {
-    length = 10 
-    special = true
+  length  = 10
+  special = true
 }
 
 resource "google_sql_user" "user" {
@@ -31,6 +29,6 @@ resource "google_sql_user" "user" {
 }
 
 resource "google_sql_database" "python_app" {
-    name = "application"
-    instance = google_sql_database_instance.postgres.name
+  name     = "application"
+  instance = google_sql_database_instance.postgres.name
 }

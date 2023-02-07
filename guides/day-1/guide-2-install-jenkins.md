@@ -6,7 +6,7 @@ This guide will take you through the steps to:
 - Configure subnet1-VM2 as a permanent agent.
 
 ## Prerequisites
-Before completing this session you should have completed [Guide 1](LINK) as we will be configuring the VMs from this guide to be our Jenkins controller and agent.
+Before completing this session you should have completed [Guide 1](https://github.com/lbg-cloud-platform/playpen-incubationlab-capstone-project/blob/main/guides/day-1/guide-1-jenkins-architecture.md) as we will be configuring the VMs from this guide to be our Jenkins controller and agent.
 
 Please ensure that you have completed the [Getting Started](https://github.com/lbg-cloud-platform/playpen-incubationlab-capstone-project/blob/main/README.md) section and are on the branch you created with the folder `capstone-project`
 

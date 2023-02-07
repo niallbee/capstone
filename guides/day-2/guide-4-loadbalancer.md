@@ -48,14 +48,18 @@ To make our application more scalable we can introduce more webservers to our co
    ```
    This will output the webserver IDs from the `web_application` module so that these values are accessible from our main configuration file in the `capstone-project` folder.
 4. Now that we have added these changes to the `web_application` module run 
-   ````
+   ```
    terraform apply
    ``` 
    To deploy them
 
 
 ## Creating the Backend Service
-A backend service defines a group of VMs that will serve traffic from a load balancer. A backend service refers to an instance group of which there are two types: managed and unmanaged. A managed instance group is a group of VMs that is managed by GCP based on parameters that you set. This means that you define a compute instance template which declares the configuration of the VMs you want and when there is sufficient demand GCP will deploy VMs based on this template. This results in a group of identical VMs the increase and decrease in number based on the demand of the user and the parameter you set (e.g. if CPU use is above 50% deploy a new VM). This is known as **auto scaling**. An unmanaged instance group is a group of VMs that have been deployed and configured by you and only increase or decrease in number if you add more VMs yourself. This means that it doesn't auto-scale to suit demand. However we are going to use an unmanaged instance group for our purposes as we will not have enough traffic to our website to require auto-scaling. 
+A backend service defines a group of VMs that will serve traffic from a load balancer. A backend service uses an instance group of which there are two types: managed and unmanaged. 
+
+A managed instance group is a group of VMs that is managed by GCP based on parameters that you set. This means that you define a compute instance template which declares the configuration of the VMs you want and when there is sufficient demand GCP will deploy VMs based on this template. This results in a group of identical VMs the increase and decrease in number based on the demand of the user and the parameter you set (e.g. if CPU use is above 50% deploy a new VM). This is known as **auto scaling**. 
+
+An unmanaged instance group is a group of VMs that have been deployed and configured by you and only increase or decrease in number if you add more VMs yourself. This means that it doesn't auto-scale to suit demand. However we are going to use an unmanaged instance group for our purposes as we will not have enough traffic to our website to require auto-scaling. 
 
 1. To create our instance group insert the following code block into `backend_service.tf` in the `day-2/load_balancer` folder
    ```
@@ -199,7 +203,7 @@ Now that we have created the infrastructure for our module lets configure the va
    ```
 
 ## Viewing the NGINX homepage
-Now that we have deployed our load balancer when can use it to view the NGINX webpage that we deployed on the VMs. 
+Now that we have deployed our load balancer we can use it to view the NGINX webpage that we deployed on the VMs. 
 
 Copy the IP of the load balancer from the output in the terminal where you ran the terraform apply and paste it into the web browser along with the port like below
    ```
@@ -215,6 +219,10 @@ You can view information about your load balancer and the health of the backend 
 
 
 ## Testing Failover
-Adding a load balancer and more instances to our infrastructure makes our website more resiliant as if one of the VMs goes down due to an error or for maintenance the website will still be accessible because on of the other instances will still be up hosting the web application. In theory so long as one instance is running the user shouldn't notice if another one goes down as they can still access the website using the IP of the load balancer. 
+Adding a load balancer and more instances to our infrastructure makes our website more resiliant as if one of the VMs goes down due to an error or for maintenance the website will still be accessible because one of the other instances will still be up hosting the web application. In theory so long as one instance is running the user shouldn't notice if another one goes down as they can still access the website using the IP of the load balancer. 
 
-To test for a failover you can stop on of the VMs in the console and then try to access the website via the load balancer IP
+To test for a failover you can stop one of the VMs in the console and then try to access the website via the load balancer IP. 
+
+1. To do this go to the GCP console and in the search bar search for "Compute Engine"
+2. Next to one of the webservers you will see three dots click on that and in the menu that pops up click on "stop" After a few minutes the webserver will be stopped. 
+3. Once it has stopped try accessing the website again by using `<LOAD BALANCER IP>:8080`. You should be able to access it with no issues. 

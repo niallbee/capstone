@@ -106,7 +106,7 @@ The following resources are used by this module:
 
 - [google_compute_firewall.allow_external_ssh](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_firewall) (resource)
 - [google_compute_firewall.allow_http](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_firewall) (resource)
-- [google_compute_firewall.allow_internal_ssh_controller_agent](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_firewall) (resource)
+- [google_compute_firewall.allow_internal_ssh](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_firewall) (resource)
 - [google_compute_firewall.default](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_firewall) (resource)
 - [google_compute_network.vpc_network](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_network) (resource)
 - [google_compute_subnetwork.subnet_1](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_subnetwork) (resource)
@@ -139,6 +139,14 @@ Default: `"europe-west2"`
 ## Outputs
 
 The following outputs are exported:
+
+### <a name="output_jenkins_agent_ip"></a> [jenkins\_agent\_ip](#output\_jenkins\_agent\_ip)
+
+Description: n/a
+
+### <a name="output_jenkins_controller_ip"></a> [jenkins\_controller\_ip](#output\_jenkins\_controller\_ip)
+
+Description: n/a
 
 ### <a name="output_load_balancer_ip"></a> [load\_balancer\_ip](#output\_load\_balancer\_ip)
 

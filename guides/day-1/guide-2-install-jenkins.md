@@ -227,7 +227,24 @@ You have now configured:
 ## Next steps
 Link to next guide here!
 
-## Steps to follow if you are having trouble running Jenkins
+## Troubleshooting Jenkins
+### Start up script logs
+When a start up script runs it automatically stores its logs in `/var/log/syslog` so that you can view the output of the script after it has run. This is very useful to debug your script if the VM is not behaving as you'd expect. To check the logs of the start up script SSH to the jenkins controller Vm
+```
+ssh -i ~/.ssh/myKeyFile testUser@<jenkins-controller-vm EXTERNAL_IP>
+```
+Then run the following command to view the logs
+```
+tail -f /var/log/syslog
+```
+This command will output the last 10 lines of the syslog file and update the output if the file changees. This is especially helpful for watching the logs of a script as it will update each time a new command is run. To view more of the syslog file at once you can run the following command
+```
+tail -n 50 /var/log/syslog
+```
+This prints out the last 50 lines of the file but does not update the output.
+
+We haven't used `cat` to view the syslog file here as the `cat` command outputs the entire file. This syslog file is very large contains the logs for the entire start up of the VM as well as our start up script right at the end. As the relevant logs to us are at the end of the file it is much easier for us to use the `tail` command. 
+### Checking for anoth service using 8080
 Jenkins won't run on port 8080 if there is already something else using the same port. In this case, let's change the port that Jenkins is running on.
 
 In the external VM terminal, type

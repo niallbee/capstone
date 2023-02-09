@@ -9,7 +9,7 @@ This session expands upon the architecture in subnet 2 by adding a load balancer
 
 
 ## Prerequisites
-To follow this guide you should have completed [Guide 3](LINK) as we will be adding a load balancer to the infrastructure we created.
+To follow this guide you should have completed [Guide 3](https://github.com/lbg-cloud-platform/playpen-incubationlab-capstone-project/blob/main/guides/day-2/guide-3-webserver-database.md) as we will be adding a load balancer to the infrastructure we created.
 
 If you added a external IP and the target tag "allow-http" to the webserver when completing Guide 3 please make sure to remove the `access_config` block and the `tags` argument from the `google_compute_instance` resource block in the `webserver.tf` file in `capstone-project/day-2/webserver` directory. Then apply the change by running `terraform apply`
 

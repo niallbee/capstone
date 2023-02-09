@@ -66,6 +66,9 @@ pipeline {
     }
 }
 ```
+
+4. Build Now and see that it passes.
+
 ## Creating a docker image
 The next steps require Docker as we will need to build and use Docker images.
 
@@ -117,6 +120,9 @@ pipeline {
     }
 }
 ```
+
+4. Build Now and see that it passes.
+
 ## Authenticating with GCP and pushing the docker image to GCR
 So far, you should have checked out and clone the python app repo, then created an image using the Dockerfile in that repo. The next step is to authenticate with GCP so that we can push the built image to Google Container Registry (GCR). This is required as for the webserver-vm to run the image, it needs to get it from somewhere. GCR is a google service that lets you store, manage, and secure your Docker container images. If we push to GCR from our jenkins agent, then the webserver-vm will be able to pull from GCR and run it.
 
@@ -236,7 +242,8 @@ pipeline {
 }
 
 ```
-10. If you now check in Container Registry in the GCP console, you should see your pushed image.
+10. Build Now and see that it passes. If you now check in Container Registry in the GCP console, you should see your pushed image.
+
 
 ## Pulling the image from GCR to the webserver vms: SSH connection
 The image should now successfully be stored in GCR. The next step is to pull it onto the webserver-vm. To be able to do this, first we need to SSH to it. This requires a few steps.
@@ -351,6 +358,7 @@ sh """
 
 This first SSH onto the first webserver using it's internal IP and the generated key pair in /home/jenkins/.ssh/webserver-key. The << EOF breaks the SSH connection when there are no more shell commands to run. The next line `hostname` should display the name of the current host, in this case, it should display the webserver vm name.
 
+11. Build Now and see that it passes.
 ## Pulling the image from GCR to the webserver vms: Docker pull
 
 1. Now that we have SSH connection the the webserver-vm, the next step is to pull the image from GCR. Since we have a database that we want to use, we will need to pass in the database variables in our `docker run` command. The following values are required: database username, database password, database IP.
@@ -419,7 +427,7 @@ pipeline {
 }
 ```
 
-14. Before running this pipeline, we need to make sure the second VM has the image and is running the container. Add the following block of code into the sshagent command, after the first shell block.
+6. Before running this pipeline, we need to make sure the second VM has the image and is running the container. Add the following block of code into the sshagent command, after the first shell block.
 ```
 sh """
 ssh jenkins@<WEBSERVER_INTERAL_IP> -i /home/jenkins/.ssh/webserver-key <<EOF
@@ -429,6 +437,8 @@ sudo docker pull eu.gcr.io/PROJECT-ID/flask-web-app:1.0
 sudo docker run --rm -d -p 8080:8080/tcp -e 'DB_IP=${DB_IP}'  -e 'DB_USERNAME=${DB_USERNAME}' -e 'DB_PASSWORD=${DB_PASSWORD}' --name flask-example-1 eu.gcr.io/PROJECT-ID/flask-web-app:1.0
 """
 ```
+7. Build Now and see that it passes.
+
 
 ## Final pipeline
 If you have followed this guide correctly, your pipeline should now look like this.
@@ -494,3 +504,7 @@ pipeline {
     }
 }
 ```
+## Viewing the webpage
+If you have followed the above steps correctly, the python image in the GitHub repo should have been checked out and cloned by the agent vm. The agent should have then creat a docker image using the Dockerfile from the cloned files. This image should then have been pushed to GCR. The agent should have then SSH to each webserver in order to pull the image from GCR and use docker to run the image in a container.
+
+1. To view the final webpage, go to the GCP console. Go to Load Balancing -> url-map -> copy the IP:Port and past it into the browser. You should now be able to see the python app!

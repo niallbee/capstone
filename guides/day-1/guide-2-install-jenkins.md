@@ -63,7 +63,7 @@ We already have the architecture for subnet-1 containing VM1 and VM2 (the archit
 
 5. Browse to `<JENKINS_INSTANCE_EXTERNAL_IP>:8080` and wait until the Unlock Jenkins page appears
 
-6. Back in the Linux session currently open, paste the following command to get the automatically generated password needed to access Jenkins for the first time. Copy this password and save it somewhere (you will need this whenever you access the Jenkins UI).
+6. Back in the Linux session currently open, paste the following command to get the automatically generated password needed to access Jenkins for the first time.
    ```
    sudo cat /var/lib/jenkins/secrets/initialAdminPassword
    ```
@@ -74,7 +74,7 @@ We already have the architecture for subnet-1 containing VM1 and VM2 (the archit
 
 2. In the Jenkins UI page you should see options to install suggested plugins or select plugins to install. Click install suggested plugins.
 
-3. Once all the plugins have installed, you can create your admin user. Enter a username and password of your chosing and make a note of them as you will need them further on in the project. You will also need to provide a name and email.
+3. Once all the plugins have installed, you can create your admin user. Enter a username and password of your chosing and make a note of them as you will need them further on in the project (you will need them to access the Jenkins instance if you are logged out). You will also need to provide a name and email (you can use you lloydsbanking.com email).
 
 4. Leave the Jenkins URL as it is. Make sure to copy the URL and paste it in a notepad, then click Save and Finish
 

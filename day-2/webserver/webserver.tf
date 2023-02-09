@@ -1,9 +1,5 @@
 data "google_service_account" "default" {
-  account_id = "104243839401002638007"
-}
-
-output "value" {
-  value = data.google_service_account.default.email
+  account_id = "PROJECT-ID-sa@pPROJECT-ID.iam.gserviceaccount.com"
 }
 
 resource "google_compute_instance" "webserver" {
@@ -29,8 +25,10 @@ resource "google_compute_instance" "webserver" {
     scopes = ["cloud-platform"]
 
   }
-  allow_stopping_for_update = true
 
-  metadata_startup_script = file("./day-2/webserver/nginx_startup.sh")
+  metadata_startup_script = ("sudo apt-get update && sudo apt install docker.io -y")
+  metadata = {
+    ssh-keys = "jenkins:JENKINS KEY HERE"
+  }
 
 }

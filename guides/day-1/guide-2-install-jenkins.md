@@ -43,11 +43,11 @@ The `metadata_startup_script` is an argument for a `google_compute_instance` res
 ```
 ssh -i ~/.ssh/myKeyFile testUser@<jenkins-controller-vm EXTERNAL_IP>
 ```
-To check that status of Jenkins. Run
+
+Please wait a few minutes before running the following command to check on the status of Jenkins
 ```
 systemctl status jenkins
 ```
-
 The output should contain `active (running)`.
 
 If you come across the following error. Please wait a few minutes and try again, it can take some time to run the start up script
@@ -55,15 +55,19 @@ If you come across the following error. Please wait a few minutes and try again,
 Unit jenkins.service could not be found.
 ```
 
-If you are having trouble here with Jenkins being stuck on `active(start)` for a long period of time. Please skip the end of the guide for further instructions (section: Steps to follow if you are having trouble running Jenkins)
+If you have waited a significant amount of time, please reset the VM:
+- Go to the GCP console -> Compute Engine -> Click on the 3 vertical dots next to the jenkins-controller-vm -> Click Reset
+Once the VM has been reset, SSH back into the controller VM. Please then wait a few minutes for Jenkins to install (can take a while ~10 mins) and run `systemctl status jenkins`. It should then say `start(running)`.
+
+If you are having trouble here with Jenkins being stuck on `active(start)` for a long period of time. Please skip to the end of the guide for further instructions (section: Steps to follow if you are having trouble running Jenkins)
 
 4. After installing and running Jenkins, the post-installation setup wizard begins. This setup wizard takes you through a few quick "one-off" steps to unlock Jenkins, customize it with plugins and create the first administrator user through which you can continue accessing Jenkins.
 
 When you first access a new Jenkins instance, you are asked to unlock it using an automatically generated password.
 
-5. Browse to `<JENKINS_INSTANCE_EXTERNAL_IP>:8080` and wait until the Unlock Jenkins page appears
+5. Browse to `<JENKINS_INSTANCE_EXTERNAL_IP>:8080` and wait until the Unlock Jenkins page appears. This can take some time and you may need to refresh the page.
 
-6. Back in the Linux session currently open, paste the following command to get the automatically generated password. Copy this password and save it somewhere (you will need this whenever you access the Jenkins UI).
+6. Go back to your Linux session (you should still have an SSH connection to the jenkins controller vm, if not, re-establish it), and paste the following command to get the automatically generated password. Copy this password and save it somewhere (you will need this whenever you access the Jenkins UI).
 ```
 sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 ```
@@ -76,38 +80,44 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 
 3. Once all the plugins have installed, click skip and continue with admin
 
-4. Leave the Jenkins URL as it is. Make sure to copy the URL and paste it in a notepad, then click Save and Finish
+4. Leave the Jenkins URL as it is. Make sure to copy the URL and paste it in a notepad. This will be how you access the Jenkins UI in future, along with the password you used to access the UI. Click Save and Finish
 
 5. You have now set up Jenkins!
 
+6. Click `Start using Jenkins` if you are still in the Jenkins wizard. Otherwise go to the Jenkins URL you copied and enter the admin username (it should be admin), and the password you used to access the setup wizard. You should see the Jenkins dashboard UI.
+
 ## Configure VM2 as a permanent agent
 
-1. Click `start using Jenkins` if you are still in the Jenkins wizard. Otherwise go to the Jenkins URL you copied.
-
-2. Enter the admin username (it should be admin), and the password you used to access the setup wizard.
-
-3. A prerequisite of the next steps is that the Jenkins agent must have Java installed. SSH into the jenkins agent (jenkins-agent-vm) and install java
+2. A prerequisite of the next steps is that the Jenkins agent must have Java and Docker installed. SSH into the jenkins agent (jenkins-agent-vm) and install java
 ```
 ssh -i ~/.ssh/myKeyFile testUser@<jenkins-agent-vm INTERNAL_IP>
 sudo apt update
 sudo apt install openjdk-11-jre -y
+sudo apt install docker.io -y
 ```
 
 ## Creating a new user
 
 1. Still inside of the jenkins agent terminal, create a jenkins user and password using the following command
 ```
-sudo adduser jenkins --shell /bin/bash
+sudo adduser jenkins
 ```
 
 Type a password when prompted. E.g. password: jenkins. The above commands should create a user and a home directory names jenkins under `/home`.
 
-2. Now login as the jenkins user using the password just created
+2. Add this user as sudo
+```
+sudo usermod -aG sudo jenkins
+```
+
+3. Now reset the vm from the GCP console
+
+4. SSH back in to the controller vm then the agent vm and login as the jenkins user using the password just created
 ```
 su jenkins
 ```
 
-3. Create a `jenkins_slave` directory under /home/jenkins
+5. Create a `jenkins_slave` directory under /home/jenkins
 ```
 mkdir /home/jenkins/jenkins_slave
 ```
@@ -157,7 +167,7 @@ Click Create.
 
 4. Add the following fields to the agent
 - Remote root directory: `/home/jenkins/jenkins_slave`
-- Usage: Only build jobs with label expressions matching this node
+- Usage: Use this node as much as possible
 - Launch method: Launch agents via SSH
 - Host: internal IP of the agent vm (jenkins-agent-vm)
 - Credentials: select the jenkins credential you previous added
@@ -176,7 +186,8 @@ You have now configured:
 Link to next guide here!
 
 ## Steps to follow if you are having trouble running Jenkins
-Jenkins won't run on port 8080 if there is already something else using the same port. In this case, let's change the port that Jenkins is running on.
+
+Your Jenkins issue may be caused by something else already running on port 8080. Jenkins won't run on port 8080 if there is already something else using the same port. In this case, let's change the port that Jenkins is running on.
 
 In the external VM terminal, type
 ```

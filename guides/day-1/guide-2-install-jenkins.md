@@ -59,13 +59,11 @@ We already have the architecture for subnet-1 containing VM1 and VM2 (the archit
 
    If you are having trouble here with Jenkins being stuck on `active(start)` for a long period of time. Please skip the end of the guide for further instructions (section: Steps to follow if you are having trouble running Jenkins)
 
-4. After installing and running Jenkins, the post-installation setup wizard begins. This setup wizard takes you through a few quick "one-off" steps to unlock Jenkins, customize it with plugins and create the first administrator user through which you can continue accessing Jenkins.
-
-   When you first access a new Jenkins instance, you are asked to unlock it using an automatically generated password.
+4. After installing and running Jenkins, the post-installation setup wizard begins. This setup wizard takes you through a few quick "one-off" steps to unlock Jenkins, customize it with plugins and create a user through which you can continue accessing Jenkins.
 
 5. Browse to `<JENKINS_INSTANCE_EXTERNAL_IP>:8080` and wait until the Unlock Jenkins page appears
 
-6. Back in the Linux session currently open, paste the following command to get the automatically generated password. Copy this password and save it somewhere (you will need this whenever you access the Jenkins UI).
+6. Back in the Linux session currently open, paste the following command to get the automatically generated password needed to access Jenkins for the first time. Copy this password and save it somewhere (you will need this whenever you access the Jenkins UI).
    ```
    sudo cat /var/lib/jenkins/secrets/initialAdminPassword
    ```
@@ -76,7 +74,7 @@ We already have the architecture for subnet-1 containing VM1 and VM2 (the archit
 
 2. In the Jenkins UI page you should see options to install suggested plugins or select plugins to install. Click install suggested plugins.
 
-3. Once all the plugins have installed, click skip and continue with admin
+3. Once all the plugins have installed, you can create your admin user. Enter a username and password of your chosing and make a note of them as you will need them further on in the project. You will also need to provide a name and email.
 
 4. Leave the Jenkins URL as it is. Make sure to copy the URL and paste it in a notepad, then click Save and Finish
 
@@ -135,7 +133,7 @@ As mentioned in the previous guide the controller and agent are going to communi
 
 1. Click `start using Jenkins` if you are still in the Jenkins wizard. Otherwise go to the Jenkins URL you copied.
 
-2. Enter the admin username (it should be admin), and the password you used to access the setup wizard.
+2. Enter the your username and password you created earlier.
 
 3. A prerequisite of the next steps is that the Jenkins agent must have Java installed. SSH into the jenkins agent (jenkins-agent-vm) and install java
    ```

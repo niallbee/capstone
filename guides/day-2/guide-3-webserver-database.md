@@ -10,7 +10,7 @@ This session will create the architecture for subnet 2 of the Capstone project. 
 This session will create a new module for the webserver and its database. The webserver deployed here will be used to host a python web application that will be able to connect to the postgres database. We will deploy the web app as part of the Jenkins pipeline on day 3.
 
 ## Prerequisites
-Before completing this session you should have completed [Guide 1](LINK) as this contains the inital set up of our Terraform configuration.
+Before completing this session you should have completed [Guide 1](https://github.com/lbg-cloud-platform/playpen-incubationlab-capstone-project/blob/main/guides/day-1/guide-1-jenkins-architecture.md) as this contains the inital set up of our Terraform configuration.
 
 Please ensure that you have completed the [Getting Started](https://github.com/lbg-cloud-platform/playpen-incubationlab-capstone-project/blob/main/README.md) section and are on the branch you created with the folder `capstone-project`
 

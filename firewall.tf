@@ -10,7 +10,7 @@ resource "google_compute_firewall" "allow_external_ssh" {
   source_ranges = ["0.0.0.0/0"]
 }
 
-resource "google_compute_firewall" "allow_internal_ssh_controller_agent" {
+resource "google_compute_firewall" "allow_internal_ssh" {
   name    = "allow-internal-ssh"
   network = google_compute_network.vpc_network.name
 
@@ -29,7 +29,7 @@ resource "google_compute_firewall" "allow_http" {
 
   allow {
     protocol = "tcp"
-    ports    = ["8080", "80"]
+    ports    = ["8080"]
   }
   target_tags   = ["allow-http"]
   source_ranges = ["0.0.0.0/0"]

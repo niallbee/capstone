@@ -104,7 +104,7 @@ variable "project_id" {
 ## Creating a VM with External SSH - Jenkins Controller
 To create an easy to read, reusable Terraform configuration we are going to use modules for the Capstone project. Terraform modules allow you to group resources that are used together into a self contained Terraform directory. This makes your code much easier to reuse as you can simply reference the module and pass through your requirements and it will build the same set of infrastructure every time. There are many premade modules available in the Terraform registry and on GitHub that you could use but you can also create your own modules - which is what we are going to do in this project.
 
-1. In the `capstone-project` folder create a new folder called `day-1`. Then within the `day-1` folder create two new files `vms.tf` and `variables.tf`.
+1. In the `capstone-project` folder create a new folder called `day-1`. Then within the `day-1` folder create the following new files `vms.tf`, `outputs.tf` and `variables.tf`.
 
    This will be the folder for our first module. It is important to note that modules are self contained and so cannot see resources outside their current directory. In our case this means that any resource created in the day-1 folder cannot see the reources we have created in the `capstone-project` folder. This means that for any information that we need from outside the module we need to create variables to allow the information to be passed through
 
@@ -147,6 +147,18 @@ To create an easy to read, reusable Terraform configuration we are going to use 
    }
    ```
    We reference the VPC and subnet name with our variables here but this configuration won't run until we reference the module and pass through the values for the VPC and subnet name.
+3. To set up Jenkins we will need the public IP of the controller VM so that we can access the Jenkins UI from our browser over port 8080. To make the public IP easily accessible to us lets add an output. In the `outputs.tf` file of the `day-1` folder insert the following code block
+   ```
+   output "jenkins_controller_ip" {
+     value = google_compute_instance.jenkins_controller_vm.network_interface.0.access_config.0.nat_ip
+   }
+   ```
+   The output we created here is witihin our jenkins module. This means that the value is only visible to the `capstone-project` directory. We now need to output it from this directory so that it comes through in the terminal. In `output.tf` in the `capstone-project` folder insert the following code block
+   ```
+   output "jenkins_controller_ip" {
+     value = module.jenkins.jenkins_controller_ip
+   }
+   ```
 4. In `main.tf` of the `capstone-project` insert the following code block
    ```
    module "jenkins" {
@@ -162,7 +174,7 @@ To create an easy to read, reusable Terraform configuration we are going to use 
 
    However before we deploy our infrastructure we want to make a few more configurations.
 
-5. To use the Jenkin UI we will need to use our web browser to access it via port 8080 over HTTP. To allow the traffic to get to the Jenkins contoller we need to create a firewall rule. To do this insert the following code block into `firewall.tf` in the `capstone-project` folder.
+5. To use the Jenkin UI we will access via port 8080 over HTTP. To allow the traffic to get to the Jenkins contoller we need to create a firewall rule. To do this insert the following code block into `firewall.tf` in the `capstone-project` folder.
    ```
    resource "google_compute_firewall" "allow_http" {
      name    = "allow-http"
@@ -170,14 +182,14 @@ To create an easy to read, reusable Terraform configuration we are going to use 
 
      allow {
        protocol = "tcp"
-       ports    = ["8080", "80"]
+       ports    = ["8080"]
      }
      target_tags   = ["allow-http"]
      source_ranges = ["0.0.0.0/0"]
    }
    ```
 
-5. To allow SSH access into this jenkins-controller-vm, we need to create a firewall rule. To do this insert the following code block into `firewall.tf` in the `capstone-project` folder.
+6. To allow SSH access into this jenkins-controller-vm, we need to create a firewall rule. To do this insert the following code block into `firewall.tf` in the `capstone-project` folder.
    ```
    resource "google_compute_firewall" "allow_external_ssh" {
      name    = "allow-external-ssh"
@@ -193,16 +205,16 @@ To create an easy to read, reusable Terraform configuration we are going to use 
    ```
 As we want SSH access from any source, we have allowed the source_ranges 0.0.0.0/0. We can use tags here to identify that which instances in the network may make network connections as specified in the firewall rule. In this case, let's assign it with the target_tags "allow-external-ssh". Any instance in the network that has this tag, will allow all SSH connections.
 
-6. Lets now add that target tags to the jenkins-controller-vm so that the firewall rules applies. Add the following line in `vms.tf` in the `day-1` folder in the jenkins_controller_vm instance, above the boot disk block.
+7. Lets now add that target tags to the jenkins-controller-vm so that the firewall rules applies. Add the following line in `vms.tf` in the `day-1` folder in the jenkins_controller_vm instance, above the boot disk block.
    ```
    tags = ["allow-external-ssh", "allow-http"]
    ```
    Now anyone from anywhere is able to connect via SSH or HTTP to this instance.
 
 
-7. To connect to the jenkins-controller-vm, we need to generate an SSH key pair. Open a new terminal outside your code editor and ensure that you are in the root directory of your machine.  Then run the following line
+8. To connect to the jenkins-controller-vm, we need to generate an SSH key pair. Open a new terminal outside your code editor and ensure that you are in the root directory of your machine.  Then run the following line
    ```
-   mkdir .ssh
+    mkdir -p ~/.ssh
    ```
    This will create a .ssh directory for you to store your SSH key pairs
    Then to generate your key pair run the following command in your terminal
@@ -213,13 +225,13 @@ As we want SSH access from any source, we have allowed the source_ranges 0.0.0.0
 
    Once this has run it will create two files: myKeyFile (the private key) and myKeyFile.pub (the public key) in the .ssh directory
 
-8. To authenticate your connection over SSH to your Linux machine it will need the public key of your key pair. We can do this by adding the public key file to our terraform code. But first we will need to retrieve the contents of your public key file. In your terminal run the following command:
+9. To authenticate your connection over SSH to your Linux machine it will need the public key of your key pair. We can do this by adding the public key file to our terraform code. But first we will need to retrieve the contents of your public key file. In your terminal run the following command:
    ```
    cat ~/.ssh/myKeyFile.pub
    ```
    This will output the contents of the public key file into the terminal. Copy the entire contents of the file from `ssh-rsa` to `testUser` inclusive.
 
-9. Add the following code into your compute instance (jenkins_controller_vm) resource block in `vms.tf` in the `day-1` and replace "YOUR KEY FILE HERE" with the contents of your public key file
+10. Add the following code into your compute instance `jenkins_controller_vm` resource block in `vms.tf` in the `day-1` and replace "YOUR KEY FILE HERE" with the contents of your public key file
    ```
     metadata = {
         ssh-keys = "testUser:YOUR KEY FILE HERE"
@@ -227,7 +239,7 @@ As we want SSH access from any source, we have allowed the source_ranges 0.0.0.0
    ```
    This adds the user testUser to the machine and allows this user to connect to the instance if their machine has the corresponding private key to the public key on the machine.
 
-10. Now we are ready to deploy our Jenkins controller VM. First run
+11. Now we are ready to deploy our Jenkins controller VM. First run
    ```
    terraform init
    ```
@@ -240,13 +252,13 @@ As we want SSH access from any source, we have allowed the source_ranges 0.0.0.0
    terraform apply
    ```
 
-11. You are now ready to test the connection to your VM! Go to the GCP console and copy the external IP from the jenkins-controller-vm. Then run the following commands in the terminal, replacing <EXTERNAL_IP> with the copied external IP from GCP.
+12. You are now ready to test the connection to your VM! Go to the GCP console and copy the external IP from the jenkins-controller-vm. Then run the following commands in the terminal, replacing <EXTERNAL_IP> with the copied external IP from GCP.
    ```
    ssh -i ~/.ssh/myKeyFile testUser@<EXTERNAL_IP>
    ```
    When you have successfully connected you should be able to see a welcome message and `testUser@jenkins-controller-vm`
 
-12. Now you are connected to you Linux VM you can run on it from your local machine. Try running the following command to output the version of Linux on the instance
+13. Now you are connected to you Linux VM you can run on it from your local machine. Try running the following command to output the version of Linux on the instance
    ```
    lsb_release -a
    ```
@@ -273,7 +285,19 @@ As we want SSH access from any source, we have allowed the source_ranges 0.0.0.0
    }
    ```
    This creates a Linux VM that does not have an external IP as we only want to be able to access this VM from within our local network (subnet-1).
-2. We want to create a firewall rule that applies only to the jenkins-agent-vm and that only allows ssh connections from our jenkins-controller-vm. We will also need internal SSH for the connections between the agent VM and the webserver that we will create in guide 3 that will host our web application.
+2. To configure the VM to be an agent for the jenkins controller we will need the internal IP so that we can use SSH. To make the internal IP more easily accessible to us lets add an output. In `outputs.tf` of the `day-1` folder insert the following code block
+   ```
+   output "jenkins_agent_ip" {
+     value = google_compute_instance.jenkins_agent_vm.network_interface.0.network_ip
+   }
+   ```
+   As with the Jenkins Controller IP output as this is within the module the value of this output will only reach the `capstone-folder`. To output this value to the terminal insert the following code block in `outputs.tf` of the `capstone-project` folder
+   ```
+   output "jenkins_agent_ip" {
+     value = module.jenkins.jenkins_agent_ip
+   }
+   ```
+3. We want to create a firewall rule that applies only to the jenkins-agent-vm and that only allows ssh connections from our jenkins-controller-vm. We will also need internal SSH for the connections between the agent VM and the webserver that we will create in guide 3 that will host our web application.
 
    In `firewall.tf` in the `capstone-project` folder add the following code block
    ```
@@ -292,7 +316,7 @@ As we want SSH access from any source, we have allowed the source_ranges 0.0.0.0
    ```
    This firewall rule is very similar to the allow-external-ssh firewall rule, however we are using source_tags over source_ranges. If source tags are specified, any traffic coming from an instance in the network with that tag will be allowed. In this case, we want our jenkins-controller-vm to have SSH access to our jenkins-agent-vm. Our jenkins-controller-vm currently has the tag "allow-external-ssh", so let's make that a source_tag. Let's create a tag called "allow-internal-ssh" and any instances in the network with that tag will have this firewall applied.
 
-3. Now let's add the tags from this firewall into our VMs. This will allow SSH connection from our jenkins-controller-vm into our jenkins-agent-vm as well as from our jenkins-agent-vm to the webserver which we will need to deploy the web application.
+4. Now let's add the tags from this firewall into our VMs. This will allow SSH connection from our jenkins-controller-vm into our jenkins-agent-vm as well as from our jenkins-agent-vm to the webserver which we will need to deploy the web application.
    Add the following block of code into our jenkins-controller-vm resource above the boot_disk block in `vms.tf` in the `day-1` folder.
    ```
    tags = ["allow-internal-ssh-source"]
@@ -303,75 +327,13 @@ As we want SSH access from any source, we have allowed the source_ranges 0.0.0.0
       tags = ["allow-internal-ssh-target"]
    ```
 
-4. To create these changes in our project, run the following
+5. To create these changes in our project, run the following
    ```
    terraform plan
    terraform apply
    ```
    No need to run `terraform init` this time as we have already installed the module
-
-5. Now we have a VM with a firewall that only allows traffic to our agent vm via our controller vm. However, no SSH keys have been generated to allow this SSH connection. The steps to generate an SSH key are very similar to what we did for our jenkins-controller-vm, however this time it will require a manual process rather than terraform.
-
-In the GCP console, copy the external IP of the jenkins-controller-vm. In the VS Code terminal, run the following code to SSH to the jenkins-controller-vm. Replacing <EXTERNAL_IP> with the copied external IP of the jenkins-controller-vm from GCP.
-```
-ssh -i ~/.ssh/myKeyFile testUser@<EXTERNAL_IP>
-```
-
-6. You should now be in the jenkins-controller-vm terminal. Similar to how we generated our previous key pair, run the following commands
- ```
-   cd ~/.ssh
-   ```
-   Then to generate your key pair run the following command in your terminal
- ```
-   ssh-keygen -t rsa -f ~/.ssh/myKeyFile -C testUser -b 2048
-```
-
-   You will then be prompted to enter a passphrase for your private key and confirm it. It is good practice to add a passphrase as it makes your private key more secure and it is often a requirement set by organisations to connect to their servers. However for this lab it is not required and you can simply press enter twice.
-
-   Once this has run it will create two files: myKeyFile (the private key) and myKeyFile.pub (the public key) in the .ssh directory
-
-7. To authenticate your connection over SSH to your jenkins-agent-vm machine it will need the public key of your key pair. We can do this by adding the public key file to the jenkins-agent-vm. But first we will need to retrieve the contents of your public key file. In your terminal run the following command:
-   ```
-   cat ~/.ssh/myKeyFile.pub
-   ```
-   This will output the contents of the public key file into the terminal. Copy the entire contents of the file from `ssh-rsa` to `testUser` inclusive.
-
-   Type `exit` to exit the VM session.
-
-8. In `vms.tf`, in the `jenkins_agent_vm` resource block, add the following block of code to add the copied SSH key onto the jenkins-agent-vm. This will allow SSH access from the jenkins-controller-vm into the jenkins-agent-vm.
-```
-metadata = {
-    ssh-keys = "testUser:<SSH KEY HERE>"
-  }
-```
-
-9. In the terminal, run
-```
-terraform plan
-```
-You should see 0 to add, 1 change, 0 to destroy. Where the change is the addition of the SSH key. If you're happy with the plan, run
-```
-terraform apply
-```
-This should add the new SSH key to the jenkins_agent_vm.
-
-9. To test the connectivity to the jenkins-agent-vm, we first must SSH back into the jenkins-controller-vm.
-
-```
-ssh -i ~/.ssh/myKeyFile testUser@<EXTERNAL_IP>
-```
-
-10. Run the following command to test the SSH connection from our jenkins-controller-vm to our jenkins-agent-vm. Where the <INTERNAL_IP> is the internal IP of the jenkins-agent-vm.
- ```
-   ssh -i ~/.ssh/myKeyFile testUser@<INTERNAL_IP>
-```
-
-10. You should now find that you have an SSH connection into the jenkins-agent-vm. Therefore for SSH traffic to reach the jenkins-agent-vm, it first must go through the jenkins-controller-vm. To check that the jenkins-controller-vm is SSH accessible from anywhere, and that the jenkins-agent-vm is only accessible from the jenkins-controller-vm, run the following commands outside of any vm sessions. You can exit a vm session by typing `exit`. The first should form a successful connection. Then type exit to exit the session. The second should time out.
-```
-ssh -i ~/.ssh/myKeyFile testUser@<jenkins-controller-vm EXTERNAL_IP>
-exit
-ssh -i ~/.ssh/myKeyFile testUser@<jenkins-agent-vm INTERNAL_IP>
-```
+6. To establish a connection over SSH between the controller and the agent we will need to generate SSH keys on the controller VM and add the public key to the agent VM. We are going to do this in the next session as we want to use a start up script to deploy Jenkins and adding this will involve redeploying the VM.
 
 ## Finishing up
 You have now created:

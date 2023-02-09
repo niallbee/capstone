@@ -54,7 +54,7 @@ Copy steps 5 to 7 in this guide: https://github.com/lbg-cloud-platform/playpen-i
 3. Now we should be able to authenticate with GitHub which should allow us to clone the repo. Replace the stage that is already in your pipeline with our new first stage 'checkout and clone python app repo'. To clone the repo, we use the Jenkins Git step. The git step performas a clone from a specified repository, using the pat credential we just generated. In this case, we use the GitHub pat as our credentials, we checkout the capstone project repo, to the specific branch feature/capstone_solution.
 
 For more information: https://www.jenkins.io/doc/pipeline/steps/git/
-
+```
 pipeline {
     agent any
     stages {
@@ -65,7 +65,7 @@ pipeline {
         }
     }
 }
-
+```
 ## Creating a docker image
 The next steps require Docker as we will need to build and use Docker images.
 
@@ -460,9 +460,9 @@ pipeline {
                     gcloud auth activate-service-account --key-file=${GC_KEY}
                     gcloud auth configure-docker eu.gcr.io
 
-                    docker tag flask-web-app:1.0 eu.gcr.io/playpen-v3w3cn/flask-web-app:1.0
+                    docker tag flask-web-app:1.0 eu.gcr.io/PROJECT-ID/flask-web-app:1.0
 
-                    docker push eu.gcr.io/playpen-v3w3cn/flask-web-app:1.0
+                    docker push eu.gcr.io/PROJECT-ID/flask-web-app:1.0
                     """
                     }
                 }
@@ -476,16 +476,16 @@ pipeline {
                             ssh jenkins@10.0.1.14 -i /home/jenkins/.ssh/webserver-key <<EOF
                             hostname
                             gcloud auth configure-docker eu.gcr.io -q
-                            sudo docker pull eu.gcr.io/playpen-v3w3cn/flask-web-app:1.0
-                            sudo docker run --rm -d -p 8080:8080/tcp -e 'DB_IP=${DB_IP}'  -e 'DB_USERNAME=${DB_USERNAME}' -e 'DB_PASSWORD=${DB_PASSWORD}' --name flask-example-1 eu.gcr.io/playpen-v3w3cn/flask-web-app:1.0
+                            sudo docker pull eu.gcr.io/PROJECT-ID/flask-web-app:1.0
+                            sudo docker run --rm -d -p 8080:8080/tcp -e 'DB_IP=${DB_IP}'  -e 'DB_USERNAME=${DB_USERNAME}' -e 'DB_PASSWORD=${DB_PASSWORD}' --name flask-example-1 eu.gcr.io/PROJECT-ID/flask-web-app:1.0
                             """
 
                             sh """
                             ssh jenkins@10.0.1.15 -i /home/jenkins/.ssh/webserver-key <<EOF
                             hostname
                             gcloud auth configure-docker eu.gcr.io -q
-                            sudo docker pull eu.gcr.io/playpen-v3w3cn/flask-web-app:1.0
-                            sudo docker run --rm -d -p 8080:8080/tcp -e 'DB_IP=${DB_IP}'  -e 'DB_USERNAME=${DB_USERNAME}' -e 'DB_PASSWORD=${DB_PASSWORD}' --name flask-example-1 eu.gcr.io/playpen-v3w3cn/flask-web-app:1.0
+                            sudo docker pull eu.gcr.io/PROJECT-ID/flask-web-app:1.0
+                            sudo docker run --rm -d -p 8080:8080/tcp -e 'DB_IP=${DB_IP}'  -e 'DB_USERNAME=${DB_USERNAME}' -e 'DB_PASSWORD=${DB_PASSWORD}' --name flask-example-1 eu.gcr.io/PROJECT-ID/flask-web-app:1.0
                             """
                         }
                     }
@@ -494,19 +494,3 @@ pipeline {
     }
 }
 ```
-
-
-
-
-2. These VMs will eventually run our python application, requiring them to have the service account assigned. Enable the Identity and Access Management (IAM) API in the GCP console.
-Insert the following line in the `google_compute_instance` resource block in `webserver.tf` in the `day-2/webserver` folder.
-```
-service_account {
-    email = data.google_compute_default_service_account.default.email
-    scopes = ["cloud-platform"]
-
-  }
-```
-
-data "google_compute_default_service_account" "default" {
-}

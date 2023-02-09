@@ -214,7 +214,7 @@ As we want SSH access from any source, we have allowed the source_ranges 0.0.0.0
 
 8. To connect to the jenkins-controller-vm, we need to generate an SSH key pair. Open a new terminal outside your code editor and ensure that you are in the root directory of your machine.  Then run the following line
    ```
-   mkdir .ssh
+    mkdir -p ~/.ssh
    ```
    This will create a .ssh directory for you to store your SSH key pairs
    Then to generate your key pair run the following command in your terminal

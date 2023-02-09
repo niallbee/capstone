@@ -21,12 +21,12 @@ We already have the architecture for subnet-1 containing VM1 and VM2 (the archit
    # This script installs Jenkins and Java. Java is required for Jenkins to run
 
    sudo apt update -y
-   sudo apt install openjdk-11-jre
+   sudo apt install openjdk-11-jre -y
    java -version
    curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo tee   /usr/share/keyrings/jenkins-keyring.asc > /dev/null
    echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc]   https://pkg.jenkins.io/debian-stable binary/ | sudo tee   /etc/apt/sources.list.d/jenkins.list > /dev/null
    sudo apt-get update -y
-   sudo apt-get install jenkins
+   sudo apt-get install jenkins -y
    sudo reboot
    ```
 
@@ -243,7 +243,7 @@ tail -n 50 /var/log/syslog
 ```
 This prints out the last 50 lines of the file but does not update the output.
 
-We haven't used `cat` to view the syslog file here as the `cat` command outputs the entire file. This syslog file is very large contains the logs for the entire start up of the VM as well as our start up script right at the end. As the relevant logs to us are at the end of the file it is much easier for us to use the `tail` command. 
+We haven't used `cat` to view the syslog file here as the `cat` command outputs the entire file. This syslog file is very large contains the logs for the entire start up of the VM as well as our start up script right at the end. As the relevant logs to us are at the end of the file it is much easier for us to use the `tail` command.
 ### Checking for anoth service using 8080
 Jenkins won't run on port 8080 if there is already something else using the same port. In this case, let's change the port that Jenkins is running on.
 

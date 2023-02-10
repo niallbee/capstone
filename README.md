@@ -39,9 +39,14 @@ Guides to completing the project can be found in the "guides" folder. It is impo
 - Day 3
   - Guide 5 Jenkins Pipeline - Learn how to create a Jenkins pipeline that deploys a python web app onto the webservers from day 2
 
-
 # Getting Started - PLEASE READ
-Before completing any of the guides ensure that you have completed the following steps. This should only need to be completed before starting the first guide.
+Before starting the the Capstone project please ensure that the following APIs are enabled in your GCP project:
+- Service networking
+- Cloud SQL
+- SQLadmin
+- Identity and Access Management (IAM)
+
+Then ensure that you have completed the following steps:
 1. Open your playpen repo in VS Code then create and checkout a new branch
 
 2. Create a new folder `capstone-project`, and in this directory in the terminal and run the following commands:

@@ -25,5 +25,5 @@ sudo chmod a+r /etc/apt/keyrings/docker.gpg
 sudo apt-get update -y
 sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
 
-# Run nginx container
-sudo docker run --name mynginx1 -p 80:80 -d nginx
+# Run nginx container. This line is commented out of the final script to stop it interfering with the python app running on port 80
+# sudo docker run --name mynginx1 -p 80:80 -d nginx

@@ -306,24 +306,23 @@ data "google_service_account" "default" {
 Insert the following line in the `google_compute_instance` resource block in `webserver.tf` in the `day-2/webserver` folder. This assigns the service account to the webserver vms.
 ```
 service_account {
-    email = data.google_compute_default_service_account.default.email
+    email = data.google_service_account.default.email
     scopes = ["cloud-platform"]
 
   }
 ```
 
-6. In addition to the above changes required to the webserver vms, we need to remove the NGINX start-up script. NGINX is currently running and will prevent the python image from running on the webservers as the address is already in use. Replace the webserver-vm start up script with the follow. This will reboot without NGINX and will install docker to allow the webservers to pull the image from GCR.
-```
-metadata_startup_script = ("sudo apt-get update && sudo apt install docker.io -y")
-```
+6. In addition to the above changes required to the webserver vms, we need to change the NGINX start-up script. NGINX is currently running and will prevent the python image from running on the webservers as the address is already in use. In `nginx_startup.sh`, comment out or delete the final line `sudo docker run --name mynginx1 -p 80:80 -d nginx`.
 
-To update GCP with the new webserver SSH-key, assigned service account, and new start up script, run
+
+7. To update GCP with the new webserver SSH-key, assigned service account, and new start up script, run
 ```
 terraform plan
 terraform apply
 ```
+This should destroy and recreate the webserver vms. If not, please delete the webserver vms and recreate with the new changes.
 
-7. Now that the webserver-vms have been redeployed with the SSH key, attempt to SSH to both the webservers to confirm the connection works.
+8. Now that the webserver-vms have been redeployed with the SSH key, attempt to SSH to both the webservers to confirm the connection works.
 ```
 ssh -i ~/.ssh/myKeyFile testUser@<CONTROLLER_EXTERNAL_IP>
 ssh -i ~/.ssh/myKeyFile testUser@<AGENT_INTERNAL_IP>
@@ -333,12 +332,12 @@ exit
 ssh jenkins@<WEBSERVER2_INTERNAL_IP> -i /home/jenkins/.ssh/webserver-key <- (connection to webserver 1 should be established here)
 ```
 
-8. Now that the agent and vms have setup SSH ability, the jenkins pipeline needs SSH ability. Install the SSH Agent Plugin in Jenkins. This plugin allows you to provide SSH credentials to builds via a ssh-agent. This plugin we will be using later.
+9. Now that the agent and vms have setup SSH ability, the jenkins pipeline needs SSH ability. Install the SSH Agent Plugin in Jenkins. This plugin allows you to provide SSH credentials to builds via a ssh-agent. This plugin we will be using later.
 - Go to the Jenkins dashboard -> Manage Jenkins -> Manage Plugins -> Available plugins -> type SSH Agent Plugin and install without restart.
 
 For more information: https://plugins.jenkins.io/ssh-agent/
 
-9. Configure the jenkins pipeline to have a new stage called `pull image from GCR to the webserver and run`. Inside this stage, add a steps block. To use the ssh-agent in Jenkins, we use `sshagent(credentials: [ssh-webserver-key ])`. This configures the build to use the webservers private SSH key for future ssh commands, allowing a future ssh command to succesfully connect to the webserver-vms.
+10. Configure the jenkins pipeline to have a new stage called `pull image from GCR to the webserver and run`. Inside this stage, add a steps block. To use the ssh-agent in Jenkins, we use `sshagent(credentials: [ssh-webserver-key ])`. This configures the build to use the webservers private SSH key for future ssh commands, allowing a future ssh command to succesfully connect to the webserver-vms.
 ```
 stage('pull image from GCR to the webserver and run'){
    steps{
@@ -348,7 +347,7 @@ stage('pull image from GCR to the webserver and run'){
 }
 ```
 
-10. Inside of the curly brackets of the sshagent block, we can add any shell commands that need to run on the webserver vm. The next step towards running the image on the webserver, is to SSH to the webserver vm from the agent VM. Inside of the curly brackets, add the following shell commands.
+11. Inside of the curly brackets of the sshagent block, we can add any shell commands that need to run on the webserver vm. The next step towards running the image on the webserver, is to SSH to the webserver vm from the agent VM. Inside of the curly brackets, add the following shell commands.
 ```
 sh """
     ssh jenkins@WEBSERVER_1_INTERNAL_IP -i /home/jenkins/.ssh/webserver-key <<EOF

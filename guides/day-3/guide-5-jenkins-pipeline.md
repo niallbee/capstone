@@ -51,7 +51,7 @@ To authenticate with GitHub, a personal access token (PAT) is needed. PAT are an
 Copy steps 5 to 7 in this guide: https://github.com/lbg-cloud-platform/playpen-incubationlab-jenkins/tree/main/Build%20Labs/build-lab-2-freestyle_job
 
 
-3. Now we should be able to authenticate with GitHub which should allow us to clone the repo. Replace the stage that is already in your pipeline with our new first stage 'checkout and clone python app repo'. To clone the repo, we use the Jenkins Git step. The git step performas a clone from a specified repository, using the pat credential we just generated. In this case, we use the GitHub pat as our credentials, we checkout the capstone project repo, to the specific branch feature/capstone_solution.
+3. Now we should be able to authenticate with GitHub which should allow us to clone the repo. Replace the stage that is already in your pipeline with our new first stage 'checkout and clone python app repo'. To clone the repo, we use the Jenkins Git step. The git step performs a clone from a specified repository, using the pat credential we just generated. In this case, we use the GitHub pat as our credentials, we checkout the capstone project repo, to the specific branch feature/capstone_solution.
 
 For more information: https://www.jenkins.io/doc/pipeline/steps/git/
 ```
@@ -91,7 +91,7 @@ stage('build docker image') {
 
 4. Now that the docker plugin is installed, the next step is to build the image from the Dockerfile. The Docker Pipeline plugin provides a `build()` method for creating a new image, from a Dockerfile in the repository, during a pipeline run.
 
-The `build()` method takes some paramteres, in this case we will supply the imageName:imageTag and the location of the Dockerfile. The location of the Dockerfile has to be specified the Dockerfile in the current repository is used by default, however our Dockerfile isn't there - it's in the flask-example-cicd folder.
+The `build()` method takes some parameters, in this case we will supply the imageName:imageTag and the location of the Dockerfile. The location of the Dockerfile has to be specified the Dockerfile in the current repository is used by default, however our Dockerfile isn't there - it's in the flask-example-cicd folder.
 
 In the build method, state the name of the image and a tag (e.g., `flask-web-app:1.0`) and where the Dockerfile is (`./flask-example-cicd/`). Create a new stage that builds the Dockerfile.
 
@@ -337,7 +337,7 @@ ssh jenkins@<WEBSERVER2_INTERNAL_IP> -i /home/jenkins/.ssh/webserver-key <- (con
 
 For more information: https://plugins.jenkins.io/ssh-agent/
 
-10. Configure the jenkins pipeline to have a new stage called `pull image from GCR to the webserver and run`. Inside this stage, add a steps block. To use the ssh-agent in Jenkins, we use `sshagent(credentials: [ssh-webserver-key ])`. This configures the build to use the webservers private SSH key for future ssh commands, allowing a future ssh command to succesfully connect to the webserver-vms.
+10. Configure the jenkins pipeline to have a new stage called `pull image from GCR to the webserver and run`. Inside this stage, add a steps block. To use the ssh-agent in Jenkins, we use `sshagent(credentials: [ssh-webserver-key ])`. This configures the build to use the webservers private SSH key for future ssh commands, allowing a future ssh command to successfully connect to the webserver-vms.
 ```
 stage('pull image from GCR to the webserver and run'){
    steps{
@@ -372,7 +372,7 @@ For the database IP, username, and password, create 3 separate jenkins Secret Te
 
 - Go to Jenkins dashboard -> Manage Jenkins -> Manage Credentials -> Global -> Add Credentials of kind "Secret Text". Click Create. Add your database password OR database IP OR database password in the Secret input. Assign an appropriate ID, e.g., dp-ip, db-username, db-password.
 
-You should now have 3 credentials specificying the database username, password, and IP.
+You should now have 3 credentials specifying the database username, password, and IP.
 
 3.  Now that the database credentials are in Jenkins and can be used in the pipeline, the image in GCR can now be pulled and ran. Inside the `sh"""` block and after the `hostname` command, add the following 2 lines
 ```
@@ -504,6 +504,6 @@ pipeline {
 }
 ```
 ## Viewing the webpage
-If you have followed the above steps correctly, the python image in the GitHub repo should have been checked out and cloned by the agent vm. The agent should have then creat a docker image using the Dockerfile from the cloned files. This image should then have been pushed to GCR. The agent should have then SSH to each webserver in order to pull the image from GCR and use docker to run the image in a container.
+If you have followed the above steps correctly, the python image in the GitHub repo should have been checked out and cloned by the agent vm. The agent should have then create a docker image using the Dockerfile from the cloned files. This image should then have been pushed to GCR. The agent should have then SSH to each webserver in order to pull the image from GCR and use docker to run the image in a container.
 
 1. To view the final webpage, go to the GCP console. Go to Load Balancing -> url-map -> copy the IP:Port and past it into the browser. You should now be able to see the python app!

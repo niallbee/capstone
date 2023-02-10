@@ -92,7 +92,7 @@ An unmanaged instance group is a group of VMs that have been deployed and config
      }
    }
    ```
-3. To ensure that our webservers are able to recieve the HTTP traffic we want to create a health check. Health checks regularly poll instances to ensure that they are able to recieve traffic by sending health probes over a designated port. If the health probe doesn't reach the instance successfully the instance is marked as "unhealthy" and traffic from the load balancer will not be sent to that instance. To create the health check insert the following code block into `backend_service.tf` in the `day-2/load_balancer` folder
+3. To ensure that our webservers are able to receive the HTTP traffic we want to create a health check. Health checks regularly poll instances to ensure that they are able to receive traffic by sending health probes over a designated port. If the health probe doesn't reach the instance successfully the instance is marked as "unhealthy" and traffic from the load balancer will not be sent to that instance. To create the health check insert the following code block into `backend_service.tf` in the `day-2/load_balancer` folder
    ```
    resource "google_compute_health_check" "healthcheck" {
      name                = "http-health-check"
@@ -104,7 +104,7 @@ An unmanaged instance group is a group of VMs that have been deployed and config
      }
    }
    ```
-   This will send a health probe to port 80 every 5 seconds and allow 5 seconds for a response. If 10 health probes do not recieve a response then the instance will be deemed unhealthy. We have targeted port 80 here as this is the port that our python webserver runs on.
+   This will send a health probe to port 80 every 5 seconds and allow 5 seconds for a response. If 10 health probes do not receive a response then the instance will be deemed unhealthy. We have targeted port 80 here as this is the port that our python webserver runs on.
 4. To allow the health probes to reach our VMs we need to create a firewall rule that allows them to reach the health check port. Insert the following code block into `firewall.tf` in the `capstone-project` folder
    ```
    resource "google_compute_firewall" "default" {
@@ -179,7 +179,7 @@ Now that we have created the infrastructure for our module lets configure the va
        region = var.region
    }
    ```
-   This module block declares a module that will be refered to as `load_balancer` in the Terraform configuration files. We use the `source` argument to tell Terraform where to find the module (in our case the `day-2/load_balancer` folder). Then we assign values to the variables that we declared in step one using `variable name = value`. For our webserver IDs we are referencing the output of the web_application module with the format `module.<module name>.<output name>`
+   This module block declares a module that will be referred to as `load_balancer` in the Terraform configuration files. We use the `source` argument to tell Terraform where to find the module (in our case the `day-2/load_balancer` folder). Then we assign values to the variables that we declared in step one using `variable name = value`. For our webserver IDs we are referencing the output of the web_application module with the format `module.<module name>.<output name>`
 3. As part of creating our `load_balancer` module we output the load balancer IP. However this just made it visible to the `capstone-project` directory. We now need to output it from this directory so that it comes through in the terminal. In `output.tf` in the `capstone-project` folder insert the following code block
    ```
    output "load_balancer_ip" {
@@ -216,7 +216,7 @@ You can view information about your load balancer and the health of the backend 
 
 
 ## Testing Failover
-Adding a load balancer and more instances to our infrastructure makes our website more resiliant as if one of the VMs goes down due to an error or for maintenance the website will still be accessible because one of the other instances will still be up hosting the web application. In theory so long as one instance is running the user shouldn't notice if another one goes down as they can still access the website using the IP of the load balancer.
+Adding a load balancer and more instances to our infrastructure makes our website more resilient as if one of the VMs goes down due to an error or for maintenance the website will still be accessible because one of the other instances will still be up hosting the web application. In theory so long as one instance is running the user shouldn't notice if another one goes down as they can still access the website using the IP of the load balancer.
 
 To test for a failover you can stop one of the VMs in the console and then try to access the website via the load balancer IP.
 

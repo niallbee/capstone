@@ -81,7 +81,7 @@ If you are having trouble here with Jenkins being stuck on `active(start)` for a
 
 2. In the Jenkins UI page you should see options to install suggested plugins or select plugins to install. Click install suggested plugins.
 
-3. Once all the plugins have installed, you can create your admin user. Enter a username and password of your chosing and make a note of them as you will need them further on in the project (you will need them to access the Jenkins instance if you are logged out). You will also need to provide a name and email (you can use you lloydsbanking.com email).
+3. Once all the plugins have installed, you can create your admin user. Enter a username and password of your choosing and make a note of them as you will need them further on in the project (you will need them to access the Jenkins instance if you are logged out). You will also need to provide a name and email (you can use you lloydsbanking.com email).
 
 4. Leave the Jenkins URL as it is. Make sure to copy the URL and paste it in a notepad. This will be how you access the Jenkins UI in future, along with the password you used to access the UI. Click Save and Finish
 
@@ -89,7 +89,7 @@ If you are having trouble here with Jenkins being stuck on `active(start)` for a
 
 ## Creating SSH keys for the controller to agent connection
 As mentioned in the previous guide the controller and agent are going to communicate over SSH. To configure this connection we need to generate SSH keys on the controller VM and add the public key to the agent VM
-1. SSH to the controller using the commnad we used before
+1. SSH to the controller using the command we used before
    ```
    ssh -i ~/.ssh/myKeyFile testUser@<jenkins-controller-vm EXTERNAL_IP>
    ```
@@ -250,7 +250,7 @@ Then run the following command to view the logs
 ```
 tail -f /var/log/syslog
 ```
-This command will output the last 10 lines of the syslog file and update the output if the file changees. This is especially helpful for watching the logs of a script as it will update each time a new command is run. To view more of the syslog file at once you can run the following command
+This command will output the last 10 lines of the syslog file and update the output if the file changes. This is especially helpful for watching the logs of a script as it will update each time a new command is run. To view more of the syslog file at once you can run the following command
 ```
 tail -n 50 /var/log/syslog
 ```

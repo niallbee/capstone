@@ -7,7 +7,7 @@ This first guide will take you through creating the architecture for a Jenkins c
 - VM1 with external SSH connection enabled
 - VM2 with SSH enabled to receive connections only from VM1
 
-VM1 will be the Jenkins controller. The Jenkins controller is the original node in the Jenkins installation. The Jenkins controller administers the Jenkins agents and orchastrates their work, including scheduling jobs on agents and monitoring agents. This means that it requires external SSH connection to allow us to SSH into it and configure it.
+VM1 will be the Jenkins controller. The Jenkins controller is the original node in the Jenkins installation. The Jenkins controller administers the Jenkins agents and orchestrates their work, including scheduling jobs on agents and monitoring agents. This means that it requires external SSH connection to allow us to SSH into it and configure it.
 
 
 VM2 will be the Jenkins agent. A Jenkins agent connects to its controller and executes tasks when directed by the controller. This explains why the agent VM needs to allow SSH traffic from controller VM and nowhere else, as it is it's controller.
@@ -102,11 +102,11 @@ variable "project_id" {
    When  prompted type "yes" to execute the apply. This will provision the VPC and subnet in your GCP project. Once the apply is complete your VPC and subnet will be visible in the console.
 
 ## Creating a VM with External SSH - Jenkins Controller
-To create an easy to read, reusable Terraform configuration we are going to use modules for the Capstone project. Terraform modules allow you to group resources that are used together into a self contained Terraform directory. This makes your code much easier to reuse as you can simply reference the module and pass through your requirements and it will build the same set of infrastructure every time. There are many premade modules available in the Terraform registry and on GitHub that you could use but you can also create your own modules - which is what we are going to do in this project.
+To create an easy to read, reusable Terraform configuration we are going to use modules for the Capstone project. Terraform modules allow you to group resources that are used together into a self contained Terraform directory. This makes your code much easier to reuse as you can simply reference the module and pass through your requirements and it will build the same set of infrastructure every time. There are many pre-made modules available in the Terraform registry and on GitHub that you could use but you can also create your own modules - which is what we are going to do in this project.
 
 1. In the `capstone-project` folder create a new folder called `day-1`. Then within the `day-1` folder create the following new files `vms.tf`, `outputs.tf` and `variables.tf`.
 
-   This will be the folder for our first module. It is important to note that modules are self contained and so cannot see resources outside their current directory. In our case this means that any resource created in the day-1 folder cannot see the reources we have created in the `capstone-project` folder. This means that for any information that we need from outside the module we need to create variables to allow the information to be passed through
+   This will be the folder for our first module. It is important to note that modules are self contained and so cannot see resources outside their current directory. In our case this means that any resource created in the day-1 folder cannot see the resources we have created in the `capstone-project` folder. This means that for any information that we need from outside the module we need to create variables to allow the information to be passed through
 
    In `variables.tf` insert the following code blocks
    ```
@@ -153,7 +153,7 @@ To create an easy to read, reusable Terraform configuration we are going to use 
      value = google_compute_instance.jenkins_controller_vm.network_interface.0.access_config.0.nat_ip
    }
    ```
-   The output we created here is witihin our jenkins module. This means that the value is only visible to the `capstone-project` directory. We now need to output it from this directory so that it comes through in the terminal. In `output.tf` in the `capstone-project` folder insert the following code block
+   The output we created here is within our jenkins module. This means that the value is only visible to the `capstone-project` directory. We now need to output it from this directory so that it comes through in the terminal. In `output.tf` in the `capstone-project` folder insert the following code block
    ```
    output "jenkins_controller_ip" {
      value = module.jenkins.jenkins_controller_ip
@@ -168,13 +168,13 @@ To create an easy to read, reusable Terraform configuration we are going to use 
      region = var.region
    }
    ```
-   This module block declares a module that will be refered to as `Jenkins` in the Terraform configuration files. We use the `source` argument to tell Terraform where to find the module (in our case the `day-1` folder). Then we assign values to the variables that we declared in step one using `variable name = value`
+   This module block declares a module that will be referred to as `Jenkins` in the Terraform configuration files. We use the `source` argument to tell Terraform where to find the module (in our case the `day-1` folder). Then we assign values to the variables that we declared in step one using `variable name = value`
 
    We could now deploy this module with a `terraform apply` but first we would need to run a `terraform init` as we have introduced a new module. The `terraform init` command installs modules in your configuration so you must run it whenever you introduce a new module.
 
    However before we deploy our infrastructure we want to make a few more configurations.
 
-5. To use the Jenkin UI we will access via port 8080 over HTTP. To allow the traffic to get to the Jenkins contoller we need to create a firewall rule. To do this insert the following code block into `firewall.tf` in the `capstone-project` folder.
+5. To use the Jenkins UI we will access via port 8080 over HTTP. To allow the traffic to get to the Jenkins controller we need to create a firewall rule. To do this insert the following code block into `firewall.tf` in the `capstone-project` folder.
    ```
    resource "google_compute_firewall" "allow_http" {
      name    = "allow-http"
@@ -342,7 +342,7 @@ You have now created:
 - The architecture for a Jenkins controller with external SSH connection enabled (VM1)
 - The architecture for a Jenkins agent (VM2) with SSH enabled to receive connections only from the controller (VM1)
 
-You now have the base architecture for your first subnet where the jenkins-controller-vm will become a Jenkins controller and the jenkins-agent-vm will become a permenant slave agent.
+You now have the base architecture for your first subnet where the jenkins-controller-vm will become a Jenkins controller and the jenkins-agent-vm will become a permanent slave agent.
 
 ## Next steps
 Link to next guide here!

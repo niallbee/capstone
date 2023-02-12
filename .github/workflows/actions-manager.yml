@@ -4,10 +4,33 @@ on:
   schedule:
     - cron: "0 0 * * 0" # At 00:00 on Sunday.
   workflow_dispatch:
+    inputs:
+      dry-run:
+        type: boolean
+        default: false
+  workflow_call:
+    outputs:
+      changed_files:
+        description: list of changed files
+        value: ${{ jobs.Github-Actions-Manager.outputs.changed_files }}
+    inputs:
+      dry-run:
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      ACTIONS_MANAGER:
+        required: true
+
+      # Will never be used but need this to please actionlint
+      ACTIONS_MANAGER_PR:
+        required: false
 
 jobs:
   Github-Actions-Manager:
     runs-on: ubuntu-latest
+    outputs:
+      changed_files: ${{ steps.output_changes.outputs.changes }}
     steps:
       - name: Checkout current repo
         uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b
@@ -54,6 +77,7 @@ jobs:
           rm -rf lcp-github-actions-manager/
 
       - name: Create Pull Request
+        if: ${{ ! inputs.dry-run }}
         uses: peter-evans/create-pull-request@671dc9c9e0c2d73f07fa45a3eb0220e1622f0c5f
         with:
           token: ${{ secrets.ACTIONS_MANAGER_PR }}
@@ -61,3 +85,9 @@ jobs:
           branch: chore/actions-manager
           delete-branch: true
           title: "chore: AUTOMATION Github Actions Manager [skip-ci]"
+
+      - name: Output Changes
+        id: output_changes
+        run: |
+          git status -s;
+          echo "changes<<EOF"$'\n'"$(git status -s)"$'\n'EOF >> "$GITHUB_OUTPUT";

@@ -357,12 +357,12 @@ stage('pull image from GCR to the webserver and run'){
 11. Inside of the curly brackets of the sshagent block, we can add any shell commands that need to run on the webserver vm. The next step towards running the image on the webserver, is to SSH to the webserver vm from the agent VM. Inside of the curly brackets, add the following shell commands.
 ```
 sh """
-    ssh jenkins@WEBSERVER_1_INTERNAL_IP -i /home/jenkins/.ssh/webserver-key <<EOF
-    hostname
+   ssh -o StrictHostKeyChecking=no jenkins@WEBSERVER_1_INTERNAL_IP <<EOF
+   hostname
 """
 ```
 
-This first SSH onto the first webserver using it's internal IP and the generated key pair in /home/jenkins/.ssh/webserver-key. The << EOF breaks the SSH connection when there are no more shell commands to run. The next line `hostname` should display the name of the current host, in this case, it should display the webserver vm name.
+This first SSH onto the first webserver using it's internal IP. The reason to use sshagent is to hide the physical location of the private key. Hence we use `StrictHostChecking=no` to authorize ssh login to the webserver without giving away the absolute path. The << EOF breaks the SSH connection when there are no more shell commands to run. The next line `hostname` should display the name of the current host, in this case, it should display the webserver vm name.
 
 11. Build Now and see that it passes.
 ## Pulling the image from GCR to the webserver vms: Docker pull
@@ -392,7 +392,7 @@ The first command configures our docker setup. The second pulls the image we ori
 
 For more information: https://docs.docker.com/engine/reference/commandline/run/
 
-4. Although the database credentials have been specified in the `docker run` command and they are a jenkins credential, we need to use `withCredentials` to pass in the values of the credentials. As we did before, `withCredentials` takes a jenkins credential ID and assigns it to a variable. These variables can then be used in the pipeline. Add the following line of code, encasing the sshagent command in the withCredentials command. This make the database credentials available for use in the `docker run` command.
+4. Although the database credentials have been specified in the `docker run` command and they are a jenkins credential, we need to use `withCredentials` to pass in the values of the credentials. As we did before, `withCredentials` takes a jenkins credential ID and assigns it to a variable. These variables can then be used in the pipeline. Add the following line of code, encasing the sshagent command within the withCredentials command. This make the database credentials available for use in the `docker run` command.
 
 Replace `db-ip`, `db-username`, and `db-password` with your jenkins credential ID's if you named them differently.
 ```
@@ -419,7 +419,7 @@ pipeline {
                     withCredentials([string(credentialsId: 'db-ip', variable: 'DB_IP'), string(credentialsId: 'db-username', variable: 'DB_USERNAME'), string(credentialsId: 'db-password', variable: 'DB_PASSWORD')]) {
                         sshagent (credentials: ['webserver-ssh-key']){
                             sh """
-                            ssh jenkins@<WEBSERVER-1-IP> -i /home/jenkins/.ssh/webserver-key <<EOF
+                            ssh -o StrictHostKeyChecking=no jenkins@WEBSERVER_1_INTERNAL_IP <<EOF
                             hostname
                             gcloud auth configure-docker eu.gcr.io -q
                             sudo docker pull eu.gcr.io/PROJECT-ID/flask-web-app:1.0
@@ -436,7 +436,7 @@ pipeline {
 6. Before running this pipeline, we need to make sure the second VM has the image and is running the container. Add the following block of code into the sshagent command, after the first shell block.
 ```
 sh """
-ssh jenkins@<WEBSERVER-2-IP> -i /home/jenkins/.ssh/webserver-key <<EOF
+ssh -o StrictHostKeyChecking=no jenkins@WEBSERVER_2_INTERNAL_IP <<EOF
 hostname
 gcloud auth configure-docker eu.gcr.io -q
 sudo docker pull eu.gcr.io/PROJECT-ID/flask-web-app:1.0

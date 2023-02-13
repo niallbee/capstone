@@ -327,9 +327,9 @@ This should destroy and recreate the webserver vms. If not, please delete the we
 ssh -i ~/.ssh/myKeyFile testUser@<CONTROLLER_EXTERNAL_IP>
 ssh -i ~/.ssh/myKeyFile testUser@<AGENT_INTERNAL_IP>
 
-ssh jenkins@<WEBSERVER1_INTERNAL_IP> -i /home/jenkins/.ssh/webserver-key <- (connection to webserver 1 should be established here)
+ssh jenkins@<WEBSERVER1_INTERNAL_IP> -i /home/jenkins/.ssh/webserver-key
 exit
-ssh jenkins@<WEBSERVER2_INTERNAL_IP> -i /home/jenkins/.ssh/webserver-key <- (connection to webserver 1 should be established here)
+ssh jenkins@<WEBSERVER2_INTERNAL_IP> -i /home/jenkins/.ssh/webserver-key
 ```
 
 9. Now that the agent and vms have setup SSH ability, the jenkins pipeline needs SSH ability. Install the SSH Agent Plugin in Jenkins. This plugin allows you to provide SSH credentials to builds via a ssh-agent. This plugin we will be using later.

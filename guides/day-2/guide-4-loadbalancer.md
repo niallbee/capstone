@@ -71,7 +71,7 @@ An unmanaged instance group is a group of VMs that have been deployed and config
 
      named_port {
        name = "http"
-       port = "8080"
+       port = "80"
      }
    }
    ```
@@ -92,7 +92,7 @@ An unmanaged instance group is a group of VMs that have been deployed and config
      }
    }
    ```
-3. To ensure that our webservers are able to recieve the HTTP traffic we want to create a health check. Health checks regularly poll instances to ensure that they are able to recieve traffic by sending health probes over a designated port. If the health probe doesn't reach the instance successfully the instance is marked as "unhealthy" and traffic from the load balancer will not be sent to that instance. To create the health check insert the following code block into `backend_service.tf` in the `day-2/load_balancer` folder
+3. To ensure that our webservers are able to receive the HTTP traffic we want to create a health check. Health checks regularly poll instances to ensure that they are able to receive traffic by sending health probes over a designated port. If the health probe doesn't reach the instance successfully the instance is marked as "unhealthy" and traffic from the load balancer will not be sent to that instance. To create the health check insert the following code block into `backend_service.tf` in the `day-2/load_balancer` folder
    ```
    resource "google_compute_health_check" "healthcheck" {
      name                = "http-health-check"
@@ -100,11 +100,11 @@ An unmanaged instance group is a group of VMs that have been deployed and config
      timeout_sec         = 5
      unhealthy_threshold = 10
      http_health_check {
-       port = 8080
+       port = 80
      }
    }
    ```
-   This will send a health probe to port 8080 every 5 seconds and allow 5 seconds for a response. If 10 health probes do not recieve a response then the instance will be deemed unhealthy. We have targeted port 8080 here as this is the port that our python webserver runs on.
+   This will send a health probe to port 80 every 5 seconds and allow 5 seconds for a response. If 10 health probes do not receive a response then the instance will be deemed unhealthy. We have targeted port 80 here as this is the port that our python webserver runs on.
 4. To allow the health probes to reach our VMs we need to create a firewall rule that allows them to reach the health check port. Insert the following code block into `firewall.tf` in the `capstone-project` folder
    ```
    resource "google_compute_firewall" "default" {
@@ -115,7 +115,7 @@ An unmanaged instance group is a group of VMs that have been deployed and config
      source_ranges = ["130.211.0.0/22", "35.191.0.0/16"]
      target_tags   = ["allow-health-check"]
      allow {
-       ports    = ["8080"]
+       ports    = ["80"]
        protocol = "tcp"
      }
    }
@@ -142,7 +142,7 @@ Now that we have set up our backend service we need to introduce a load balancer
    resource "google_compute_global_forwarding_rule" "forwarding_rule" {
      name       = "web-app-forwarding-rule"
      target     = google_compute_target_http_proxy.http_proxy.self_link
-     port_range = "8080"
+     port_range = "80"
    }
    ```
    Here the `google_compute_global_forwarding_rule` represents the load balancer - it creates the IP and is the initial resource that HTTP requests to our website will hit. Our traffic will then be routed via the `google_compute_target_http_proxy` to the `google_compute_url_map` which will distribute the requests to the backend service.
@@ -179,7 +179,7 @@ Now that we have created the infrastructure for our module lets configure the va
        region = var.region
    }
    ```
-   This module block declares a module that will be refered to as `load_balancer` in the Terraform configuration files. We use the `source` argument to tell Terraform where to find the module (in our case the `day-2/load_balancer` folder). Then we assign values to the variables that we declared in step one using `variable name = value`. For our webserver IDs we are referencing the output of the web_application module with the format `module.<module name>.<output name>`
+   This module block declares a module that will be referred to as `load_balancer` in the Terraform configuration files. We use the `source` argument to tell Terraform where to find the module (in our case the `day-2/load_balancer` folder). Then we assign values to the variables that we declared in step one using `variable name = value`. For our webserver IDs we are referencing the output of the web_application module with the format `module.<module name>.<output name>`
 3. As part of creating our `load_balancer` module we output the load balancer IP. However this just made it visible to the `capstone-project` directory. We now need to output it from this directory so that it comes through in the terminal. In `output.tf` in the `capstone-project` folder insert the following code block
    ```
    output "load_balancer_ip" {
@@ -204,7 +204,7 @@ Now that we have deployed our load balancer we can use it to view the NGINX webp
 
 Copy the IP of the load balancer from the output in the terminal where you ran the terraform apply and paste it into the web browser along with the port like below
    ```
-   <LOAD BALANCER IP>:8080
+   <LOAD BALANCER IP>:80
    ```
 
 ## Viewing the Load Balancer
@@ -216,10 +216,10 @@ You can view information about your load balancer and the health of the backend 
 
 
 ## Testing Failover
-Adding a load balancer and more instances to our infrastructure makes our website more resiliant as if one of the VMs goes down due to an error or for maintenance the website will still be accessible because one of the other instances will still be up hosting the web application. In theory so long as one instance is running the user shouldn't notice if another one goes down as they can still access the website using the IP of the load balancer.
+Adding a load balancer and more instances to our infrastructure makes our website more resilient as if one of the VMs goes down due to an error or for maintenance the website will still be accessible because one of the other instances will still be up hosting the web application. In theory so long as one instance is running the user shouldn't notice if another one goes down as they can still access the website using the IP of the load balancer.
 
 To test for a failover you can stop one of the VMs in the console and then try to access the website via the load balancer IP.
 
 1. To do this go to the GCP console and in the search bar search for "Compute Engine"
 2. Next to one of the webservers you will see three dots click on that and in the menu that pops up click on "stop" After a few minutes the webserver will be stopped.
-3. Once it has stopped try accessing the website again by using `<LOAD BALANCER IP>:8080`. You should be able to access it with no issues.
+3. Once it has stopped try accessing the website again by using `<LOAD BALANCER IP>:80`. You should be able to access it with no issues.

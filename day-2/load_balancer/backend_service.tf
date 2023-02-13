@@ -9,7 +9,7 @@ resource "google_compute_instance_group" "webservers" {
 
   named_port {
     name = "http"
-    port = "8080"
+    port = "80"
   }
 }
 
@@ -34,6 +34,6 @@ resource "google_compute_health_check" "healthcheck" {
   timeout_sec         = 5
   unhealthy_threshold = 10
   http_health_check {
-    port = 8080
+    port = 80
   }
 }

@@ -42,26 +42,33 @@ We already have the architecture for subnet-1 containing VM1 and VM2 (the archit
    ```
 
 3. SSH into the Jenkins controller (jenkins-controller-vm)
-   ```
-   ssh -i ~/.ssh/myKeyFile testUser@<jenkins-controller-vm EXTERNAL_IP>
-   ```
-   To check that status of Jenkins. Run
-   ```
-   systemctl status jenkins
-   ```
+```
+ssh -i ~/.ssh/myKeyFile testUser@<jenkins-controller-vm EXTERNAL_IP>
+```
 
-   The output should contain `active (running)`.
+Please wait a few minutes before running the following command to check on the status of Jenkins
+```
+systemctl status jenkins
+```
+The output should contain `active (running)`.
 
-   If you come across the following error. Please wait a few minutes and try again, it can take some time to run the start up script
-   ```
-   Unit jenkins.service could not be found.
-   ```
+If you come across the following error. Please wait a few minutes and try again, it can take some time to run the start up script
+```
+Unit jenkins.service could not be found.
+```
+
+If you have waited a significant amount of time, please reset the VM:
+- Go to the GCP console -> Compute Engine -> Click on the 3 vertical dots next to the jenkins-controller-vm -> Click Reset
+Once the VM has been reset, SSH back into the controller VM. Please then wait a few minutes for Jenkins to install (can take a while ~10 mins) and run `systemctl status jenkins`. It should then say `start(running)`.
+
+If you are having trouble here with Jenkins being stuck on `active(start)` for a long period of time. Please skip to the end of the guide for further instructions (section: Steps to follow if you are having trouble running Jenkins)
+
 
    If you are having trouble here with Jenkins being stuck on `active(start)` for a long period of time. Please skip the end of the guide for further instructions (section: Steps to follow if you are having trouble running Jenkins)
 
 4. After installing and running Jenkins, the post-installation setup wizard begins. This setup wizard takes you through a few quick "one-off" steps to unlock Jenkins, customize it with plugins and create a user through which you can continue accessing Jenkins.
 
-5. Browse to `<JENKINS_INSTANCE_EXTERNAL_IP>:8080` and wait until the Unlock Jenkins page appears
+5. Browse to `<JENKINS_INSTANCE_EXTERNAL_IP>:8080` and wait until the Unlock Jenkins page appears. This can take some time and you may need to refresh the page.
 
 6. Back in the Linux session currently open, paste the following command to get the automatically generated password needed to access Jenkins for the first time.
    ```
@@ -74,15 +81,15 @@ We already have the architecture for subnet-1 containing VM1 and VM2 (the archit
 
 2. In the Jenkins UI page you should see options to install suggested plugins or select plugins to install. Click install suggested plugins.
 
-3. Once all the plugins have installed, you can create your admin user. Enter a username and password of your chosing and make a note of them as you will need them further on in the project (you will need them to access the Jenkins instance if you are logged out). You will also need to provide a name and email (you can use you lloydsbanking.com email).
+3. Once all the plugins have installed, you can create your admin user. Enter a username and password of your choosing and make a note of them as you will need them further on in the project (you will need them to access the Jenkins instance if you are logged out). You will also need to provide a name and email (you can use you lloydsbanking.com email).
 
-4. Leave the Jenkins URL as it is. Make sure to copy the URL and paste it in a notepad, then click Save and Finish
+4. Leave the Jenkins URL as it is. Make sure to copy the URL and paste it in a notepad. This will be how you access the Jenkins UI in future, along with the password you used to access the UI. Click Save and Finish
 
 5. You have now set up Jenkins!
 
 ## Creating SSH keys for the controller to agent connection
 As mentioned in the previous guide the controller and agent are going to communicate over SSH. To configure this connection we need to generate SSH keys on the controller VM and add the public key to the agent VM
-1. SSH to the controller using the commnad we used before
+1. SSH to the controller using the command we used before
    ```
    ssh -i ~/.ssh/myKeyFile testUser@<jenkins-controller-vm EXTERNAL_IP>
    ```
@@ -140,26 +147,44 @@ As mentioned in the previous guide the controller and agent are going to communi
    ssh -i ~/.ssh/myKeyFile testUser@<jenkins-agent-vm INTERNAL_IP>
    sudo apt update
    sudo apt install openjdk-11-jre -y
+   sudo apt install docker.io -y
    ```
 
 ## Creating a new user
 
 1. Still inside of the jenkins agent terminal, create a jenkins user and password using the following command
    ```
-   sudo adduser jenkins --shell /bin/bash
+   sudo adduser jenkins
    ```
 
-   Type a password when prompted. E.g. password: jenkins. The above commands should create a user and a home directory names jenkins under `/home`.
+   Type a password when prompted. E.g. password: jenkins.
 
-2. Now login as the jenkins user using the password just created
-   ```
-   su jenkins
-   ```
+2. Add this user as sudo
+```
+sudo usermod -aG sudo jenkins
+```
 
-3. Create a `jenkins_slave` directory under /home/jenkins
-   ```
-   mkdir /home/jenkins/jenkins_slave
-   ```
+3. Now reset the vm from the GCP console
+
+4. SSH back in to the controller vm then the agent vm and login as the jenkins user using the password just created
+```
+su jenkins
+```
+
+5. Create a `jenkins_slave` directory under /home/jenkins
+```
+mkdir /home/jenkins/jenkins_slave
+```
+
+6. Now we need to edit the /etc/sudoers file to disable tty while executing sudo commands with the jenkins user from the jenkins pipeline.
+```
+sudo nano /etc/suoders
+```
+Inside of this file, under the section `# Allow members of group sudo to execute any command`, add the following line.
+```
+jenkins ALL=(ALL:ALL) NOPASSWD: ALL
+```
+
 
 ## Setting up Jenkins slave using ssh keys
 
@@ -206,7 +231,7 @@ Click Create.
 
 4. Add the following fields to the agent
 - Remote root directory: `/home/jenkins/jenkins_slave`
-- Usage: Only build jobs with label expressions matching this node
+- Usage: Use this node as much as possible
 - Launch method: Launch agents via SSH
 - Host: internal IP of the agent vm (jenkins-agent-vm)
 - Credentials: select the jenkins credential you previous added
@@ -215,6 +240,11 @@ Click Create.
 5. Click save. Jenkins will automatically connect to the slave machine and configure it as an agent.
 
 6. Click on the agent you just created. Click Log, you should see `This node is being launched`, eventually you should see `Agent successfully connected and online`. You have now made the second VM a permanent Jenkins slave!
+
+## Removing executors from the controller VM
+To ensure that only the agent VM is used for executing the pipeline, we need to remove any executors from the controller.
+
+1. Go to Manage Jenkins -> Manage Nodes and Clouds -> Built-in node -> Change the number of executors to 0.
 
 ## Finishing up
 You have now configured:
@@ -234,7 +264,7 @@ Then run the following command to view the logs
 ```
 tail -f /var/log/syslog
 ```
-This command will output the last 10 lines of the syslog file and update the output if the file changees. This is especially helpful for watching the logs of a script as it will update each time a new command is run. To view more of the syslog file at once you can run the following command
+This command will output the last 10 lines of the syslog file and update the output if the file changes. This is especially helpful for watching the logs of a script as it will update each time a new command is run. To view more of the syslog file at once you can run the following command
 ```
 tail -n 50 /var/log/syslog
 ```
@@ -242,7 +272,7 @@ This prints out the last 50 lines of the file but does not update the output.
 
 We haven't used `cat` to view the syslog file here as the `cat` command outputs the entire file. This syslog file is very large contains the logs for the entire start up of the VM as well as our start up script right at the end. As the relevant logs to us are at the end of the file it is much easier for us to use the `tail` command.
 ### Checking for another service using port 8080
-Jenkins won't run on port 8080 if there is already something else using the same port. In this case, let's change the port that Jenkins is running on.
+Your Jenkins issue may be caused by something else already running on port 8080. Jenkins won't run on port 8080 if there is already something else using the same port. In this case, let's change the port that Jenkins is running on.
 
 In the external VM terminal, type
 ```

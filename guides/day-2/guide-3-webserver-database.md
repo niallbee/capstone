@@ -10,7 +10,7 @@ This session will create the architecture for subnet 2 of the Capstone project. 
 This session will create a new module for the webserver and its database. The webserver deployed here will be used to host a python web application that will be able to connect to the postgres database. We will deploy the web app as part of the Jenkins pipeline on day 3.
 
 ## Prerequisites
-Before completing this session you should have completed [Guide 1](https://github.com/lbg-cloud-platform/playpen-incubationlab-capstone-project/blob/main/guides/day-1/guide-1-jenkins-architecture.md) as this contains the inital set up of our Terraform configuration.
+Before completing this session you should have completed [Guide 1](https://github.com/lbg-cloud-platform/playpen-incubationlab-capstone-project/blob/main/guides/day-1/guide-1-jenkins-architecture.md) as this contains the initial set up of our Terraform configuration.
 
 Please ensure that you have completed the [Getting Started](https://github.com/lbg-cloud-platform/playpen-incubationlab-capstone-project/blob/main/README.md) section and are on the branch you created with the folder `capstone-project`
 
@@ -83,31 +83,51 @@ To create a webserver we are going to deploy a compute engine that installs NGIN
      }
    }
    ```
-   This creates a Linux VM runninng Ubuntu 18. This VM will only have a private IP as we haven't allocated an external IP. This makes the instance more secure as it will be much harder for a external party to access the instance as they would have to be in our network to use the internal IP.
+   This creates a Linux VM running Ubuntu 18. This VM will only have a private IP as we haven't allocated an external IP. This makes the instance more secure as it will be much harder for a external party to access the instance as they would have to be in our network to use the internal IP.
 
 ### Creating a script to install NGINX
 To turn our Linux VM into a webserver we need to install a webserver application onto it. We can do this with a start up script that will run when the VM boots up. For this exercise we are going to use NGINX. [NGINX](https://nginx.org/en/docs/) is an open source lightweight webserver that is easy to configure making it it ideal for testing the connectivity of your infrastructure.
 1. In the `day-2/webserver` folder create a file called `nginx_startup.sh`
-2. In `nginx_startup.sh` insert the following lines
+2. In `nginx_startup.sh` insert the following script
    ```
    #!/bin/bash
    set -exo pipefail
-   ```
-   The first line sets the default shell for the script to be executed in as bash. The second line ensures that our script will output the executed commands to the terminal and that if an error is encounted it will immediately exit and return the error code. These lines are best practice for bash scripts.
-3. Next in `nginx_startup.sh` insert the following lines
-   ```
+
+   # Update apt and allow apt to use repository over HTTPS
+   sudo apt-get update
+   sudo apt-get install \
+     ca-certificates \
+     curl \
+     gnupg \
+     lsb-release -y
+
+   # Add Docker's official GPG key
+   sudo mkdir -m 0755 -p /etc/apt/keyrings
+   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+   # Set up repository
+   echo \
+     "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+     $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+   # Grat read permission for Docker public key file
+   sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+   # Install Docker engine
    sudo apt-get update -y
-   sudo apt install nginx -y
+   sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+
+   # Run nginx container
+   sudo docker run --name mynginx1 -p 80:80 -d nginx
    ```
-   The first line updates the Ubuntu OS ensuring we have all the latest packages. This is good practice when you deploy a VM as the image you are using may not be up to date and so may not have the latest patches.
-   The second line installs the NGINX webserver. The `-y` means that the command will not wait for you to approve the installation of NGINX. This is important to include in a start up script as without it the script would "hang" waiting for your input and not run to completion.
-4. Finally in `nginx_startup.sh` insert the following lines
-   ```
-   sudo sed -i "/listen 80 default_server;/c\listen 8080 default_server;" /etc/nginx/sites-enabled/default
-   sudo systemctl restart nginx
-   ```
-   This first line uses [sed](https://www.gnu.org/software/sed/manual/sed.html) to replace the line "listen 80 default_server" with "listen 8080 default_server;". This reconfigures NGINX to listen on port 8080 rather than port 80. We have done this because we want to test connectivity over port 8080 as the python web application that we want to deploy runs on port 8080.
-   The second line restarts the NGINX server to implement the change to the server to listen on port 8080.
+   This script installs the Docker engine and runs an nginx server in a docker container on port 80.
+
+   **Note**
+
+   The first line of the script sets the default shell for the script to be executed in as bash. The second line ensures that our script will output the executed commands to the terminal and that if an error is encountered it will immediately exit and return the error code. These lines are best practice for bash scripts.
+
+   The `-y` at the end of some of the command means that these commands will not waiting for manual input to approve them. Instead we pass the approval with the command so that the script doesn't "hang" waiting for manual input. This is important for automation scripts as it will prevent the script from completing if it is left to wait for manual input
+
 
 ### Adding the start up script to the VM
 Now that we have created our start up script we need to add it to our compute instance. Insert the following into the compute instance resource block in `webserver.tf` in the `day-2/webserver` folder
@@ -129,11 +149,11 @@ A NAT (Network Address Translation) router enables devices without a public IP t
    ```
 2. To create the router that will direct the traffic from our VMs to the internet via the NAT IP insert the following code blocks into `networking.tf` in the `day-2/webserver` folder
    ```
-   resource "google_compute_router" "nat_router" {
-     name    = "nat-router"
-     network = data.google_compute_network.vpc_network.id
-     region  = "europe-west2"
-   }
+  resource "google_compute_router" "nat_router" {
+    name    = "nat-router"
+    network = var.vpc_id
+    region  = "europe-west2"
+  }
 
     resource "google_compute_router_nat" "nat" {
       name                               = "my-router-nat"
@@ -176,7 +196,7 @@ To use with our web application we are going to deploy a [PostgreSQL](https://ww
      deletion_protection = false
    }
    ```
-   On this database instance we have configured it to allow private connections from our VPC. The Cloud SQL service sits outside subnet-2 and so is not part of our LAN network. This means that we cannot whitelist the webserver using its private IP as the Cloud SQL service will not know what we are refering to (remember private IPs only need to be unique within their LAN). To allow a connection between the Cloud SQL instance and our private webservers we create a private IP for our database within our VPC network and a private connection to the Cloud SQL service from our VPC.
+   On this database instance we have configured it to allow private connections from our VPC. The Cloud SQL service sits outside subnet-2 and so is not part of our LAN network. This means that we cannot whitelist the webserver using its private IP as the Cloud SQL service will not know what we are referring to (remember private IPs only need to be unique within their LAN). To allow a connection between the Cloud SQL instance and our private webservers we create a private IP for our database within our VPC network and a private connection to the Cloud SQL service from our VPC.
 2. To create a private IP within our VPC for our database insert the following code blocks into `networking.tf` in the `day-2/webserver` folder
    ```
    resource "google_compute_global_address" "private_ip_address" {
@@ -184,13 +204,13 @@ To use with our web application we are going to deploy a [PostgreSQL](https://ww
      purpose       = "VPC_PEERING"
      address_type  = "INTERNAL"
      prefix_length = 16
-     network       = data.google_compute_network.vpc_network.id
+     network       = var.vpc_id
    }
    ```
 3. To establish a private connection between our private IP and the Cloud SQL service's network insert the following code block into `networking.tf`in the `day-2/webserver` folder
    ```
    resource "google_service_networking_connection" "private_db_connector" {
-     network                 = data.google_compute_network.vpc_network.id
+     network                 = var.vpc_id
      service                 = "servicenetworking.googleapis.com"
      reserved_peering_ranges = [google_compute_global_address.private_ip_address.name]
    }
@@ -203,7 +223,7 @@ To use with our web application we are going to deploy a [PostgreSQL](https://ww
      password = random_password.db_password.result
    }
    ```
-5. To ensure a secure password for the database user we should randomly generate it. Terraform provides a resource for this called [random passsword](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password). To create the random password insert the following code block into `database.tf` in the `day-2/webserver` folder`
+5. To ensure a secure password for the database user we should randomly generate it. Terraform provides a resource for this called [random password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password). To create the random password insert the following code block into `database.tf` in the `day-2/webserver` folder`
    ```
    resource "random_password" "db_password" {
        length = 10
@@ -230,7 +250,7 @@ Now that we have created the Terraform code for our webserver module we can call
      region = var.region
    }
    ```
-   This module block declares a module that will be refered to as `web_application` in the Terraform configuration files. We use the `source` argument to tell Terraform where to find the module (in our case the `day-2/webseerver` folder). Then we assign values to the variables that we declared in step one using `variable name = value`
+   This module block declares a module that will be referred to as `web_application` in the Terraform configuration files. We use the `source` argument to tell Terraform where to find the module (in our case the `day-2/webserver` folder). Then we assign values to the variables that we declared in step one using `variable name = value`
 2. Now we are ready to deploy our webserver and database infrastructure. First run
    ```
    terraform init
@@ -252,13 +272,13 @@ Now that the infrastructure is deployed we want to view the NGINX homepage so th
 
 The first option is more simplistic but less secure but we will use here to test our configuration. [Guide 4](LINK) walks you through how to deploy a Load balancer.
 
-1. To add an external IP to our webserver insert the following code block into the `google_compute_instance` `network_interface` block in the `weberser.tf` file in the `day-2/webseerver` folder
+1. To add an external IP to our webserver insert the following code block into the `google_compute_instance` `network_interface` block in the `webserver.tf` file in the `day-2/webserver` folder
    ```
    access_config {
      // Ephemeral public IP
    }
    ```
-2. To allow traffic to our webserver insert the following code block into the `google_compute_instance` resource block in the `weberser.tf` file in the `day-2/webseerver` folder
+2. To allow traffic to our webserver insert the following code block into the `google_compute_instance` resource block in the `webserver.tf` file in the `day-2/webserver` folder
    ```
    tags = ["allow-http"]
    ```
@@ -266,6 +286,6 @@ The first option is more simplistic but less secure but we will use here to test
 4. In the GCP console search for "compute engine" in the search bar and go to the page. You should be able to see an instance called "python-web-server". Copy the external IP
 5. Paste the external IP of the VM into the search bar of you browser as shown below:
    ```
-   <EXTERNAL IP>:8080
+   <EXTERNAL IP>:80
    ```
    You should be greeted with a "Welcome to nginx!" page.

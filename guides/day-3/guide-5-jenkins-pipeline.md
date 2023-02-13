@@ -8,6 +8,8 @@ That will do the following steps.
 On the agent machine:
 
 - Checkout and clone the python app repo
+   - URL: https://github.com/lbg-cloud-platform/playpen-incubationlab-capstone-project
+    - Branch: feature/capstone_solution
 - Build the python app image using docker
 - Authenticate with GCP
 - Push the docker image to Google Container Registry (GCR)
@@ -99,6 +101,8 @@ One major benefit of using the syntax `docker.build("my-image-name")` is that a 
 
 The line `sh "sudo chmod 666 /var/run/docker.sock"` changes the permissions for that file to anyone, as our pipeline needs access to it to run docker commands.
 
+The line `docker images` will show that the image has been created with the given image name and tag along with the base image. You will be able to view this in the console output.
+
 ```
 pipeline {
     agent any
@@ -114,6 +118,7 @@ pipeline {
                 script{
                     sh "sudo chmod 666 /var/run/docker.sock"
                     dockerImage = docker.build("flask-web-app:1.0", "./flask-example-cicd/")
+                    sh "docker images"
                 }
             }
         }
@@ -169,14 +174,16 @@ withCredentials([file(credentialsId: 'gcp-json-secret-file', variable: 'GC_KEY')
 
 For more information: https://www.jenkins.io/doc/pipeline/steps/credentials-binding/
 
-5. Inside of the curly brackets of the `withCredentials`, add a shell script that activates the service account using the JSON key variable. The shells script is run inside the jenkins agent vm.
+5. Inside of the curly brackets of the `withCredentials`, add a shell script that activates the service account using the JSON key variable. The shell script is run inside the jenkins agent vm.
 ```
+sh """
 gcloud auth activate-service-account --key-file=${GC_KEY}
+"""
 ```
 
 6. Next, the agent vm needs to authenticate with Docker. As Docker will be used to push the image to GCR.
 
-`gcloud auth configure-docker` adds the Docker credHelper entry to Docker's configuration file, or creates the file if it doesn't exist. This will register gcloud as the credential helper for all Google-supported Docker registries. The following line configures docker authentication with GCR.
+`gcloud auth configure-docker` adds the Docker credHelper entry to Docker's configuration file, or creates the file if it doesn't exist. This will register gcloud as the credential helper for all Google-supported Docker registries. The following line configures docker authentication with GCR. Still inside of the shell command, add the following line.
 
 ```
 gcloud auth configure-docker eu.gcr.io
@@ -194,7 +201,7 @@ Consider the following example:
 
 Combining the hostname, project, and target image name gives you the full image path to use for tagging: `gcr.io/my-project/web-site`.
 
-Add the following line to tag your image appropriately.
+Add the following line to tag your image appropriately (still inside of the shell command).
 
 ```
 docker tag flask-web-app:1.0 eu.gcr.io/PROJECT-ID/flask-web-app:1.0

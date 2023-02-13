@@ -490,19 +490,19 @@ pipeline {
                     withCredentials([file(credentialsId: 'gcp-json-secret-file', variable: 'GC_KEY'), string(credentialsId: 'db-ip', variable: 'DB_IP'), string(credentialsId: 'db-username', variable: 'DB_USERNAME'), string(credentialsId: 'db-password', variable: 'DB_PASSWORD')]) {
                         sshagent (credentials: ['webserver-ssh-key']){
                             sh """
-                            ssh jenkins@10.0.1.14 -i /home/jenkins/.ssh/webserver-key <<EOF
+                            ssh jenkins@WEBSERVER-1-IP -i /home/jenkins/.ssh/webserver-key <<EOF
                             hostname
                             gcloud auth configure-docker eu.gcr.io -q
                             sudo docker pull eu.gcr.io/PROJECT-ID/flask-web-app:1.0
-                            sudo docker run --rm -d -p 8080:8080/tcp -e 'DB_IP=${DB_IP}'  -e 'DB_USERNAME=${DB_USERNAME}' -e 'DB_PASSWORD=${DB_PASSWORD}' --name flask-example-1 eu.gcr.io/PROJECT-ID/flask-web-app:1.0
+                            sudo docker run --rm -d -p 8080:80/tcp -e 'DB_IP=${DB_IP}'  -e 'DB_USERNAME=${DB_USERNAME}' -e 'DB_PASSWORD=${DB_PASSWORD}' --name flask-example-1 eu.gcr.io/PROJECT-ID/flask-web-app:1.0
                             """
 
                             sh """
-                            ssh jenkins@10.0.1.15 -i /home/jenkins/.ssh/webserver-key <<EOF
+                            ssh jenkins@WEBSERVER-2-IP -i /home/jenkins/.ssh/webserver-key <<EOF
                             hostname
                             gcloud auth configure-docker eu.gcr.io -q
                             sudo docker pull eu.gcr.io/PROJECT-ID/flask-web-app:1.0
-                            sudo docker run --rm -d -p 8080:8080/tcp -e 'DB_IP=${DB_IP}'  -e 'DB_USERNAME=${DB_USERNAME}' -e 'DB_PASSWORD=${DB_PASSWORD}' --name flask-example-1 eu.gcr.io/PROJECT-ID/flask-web-app:1.0
+                            sudo docker run --rm -d -p 8080:80/tcp -e 'DB_IP=${DB_IP}'  -e 'DB_USERNAME=${DB_USERNAME}' -e 'DB_PASSWORD=${DB_PASSWORD}' --name flask-example-1 eu.gcr.io/PROJECT-ID/flask-web-app:1.0
                             """
                         }
                     }

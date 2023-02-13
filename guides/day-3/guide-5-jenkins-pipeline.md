@@ -385,7 +385,7 @@ You should now have 3 credentials specifying the database username, password, an
 ```
     gcloud auth configure-docker eu.gcr.io -q
     sudo docker pull eu.gcr.io/PROJECT-ID/flask-web-app:1.0
-    sudo docker run --rm -d -p 8080:8080/tcp -e 'DB_IP=${DB_IP}' -e 'DB_USERNAME=${DB_USERNAME}' -e 'DB_PASSWORD=${DB_PASSWORD}' --name flask-example-1 eu.gcr.io/PROJECT-ID/flask-web-app:1.0
+    sudo docker run --rm -d -p 80:8080/tcp -e 'DB_IP=${DB_IP}' -e 'DB_USERNAME=${DB_USERNAME}' -e 'DB_PASSWORD=${DB_PASSWORD}' --name flask-example-1 eu.gcr.io/PROJECT-ID/flask-web-app:1.0
 ```
 
 The first command configures our docker setup. The second pulls the image we originally pushed to GCR. The specific image name is required here. The second command is `docker run` followed by some arguments. The `-rm` flag automatically removes the container when it exits. The `-d` flag runs the container in the background and the `-p` flag publishes the containers ports to the host. In this case we have specified 8080:8080/tcp. The `-e` flags followed by the database ip, username, and password credential ID's sets the environment variables. The `-name` flag specifies what we want the name of the container to be, `flask-example-1` and finally the image name we want docker to run, `eu.gcr.io/PROJECT-ID/flask-web-app:1.0`.
@@ -419,11 +419,11 @@ pipeline {
                     withCredentials([string(credentialsId: 'db-ip', variable: 'DB_IP'), string(credentialsId: 'db-username', variable: 'DB_USERNAME'), string(credentialsId: 'db-password', variable: 'DB_PASSWORD')]) {
                         sshagent (credentials: ['webserver-ssh-key']){
                             sh """
-                            ssh jenkins@<WEBSERVER_INTERNAL_IP> -i /home/jenkins/.ssh/webserver-key <<EOF
+                            ssh jenkins@<WEBSERVER-1-IP> -i /home/jenkins/.ssh/webserver-key <<EOF
                             hostname
                             gcloud auth configure-docker eu.gcr.io -q
                             sudo docker pull eu.gcr.io/PROJECT-ID/flask-web-app:1.0
-                            sudo docker run --rm -d -p 8080:8080/tcp -e 'DB_IP=${DB_IP}'  -e 'DB_USERNAME=${DB_USERNAME}' -e 'DB_PASSWORD=${DB_PASSWORD}' --name flask-example-1 eu.gcr.io/PROJECT-ID/flask-web-app:1.0
+                            sudo docker run --rm -d -p 80:8080/tcp -e 'DB_IP=${DB_IP}'  -e 'DB_USERNAME=${DB_USERNAME}' -e 'DB_PASSWORD=${DB_PASSWORD}' --name flask-example-1 eu.gcr.io/PROJECT-ID/flask-web-app:1.0
                             """
                         }
                     }
@@ -436,11 +436,11 @@ pipeline {
 6. Before running this pipeline, we need to make sure the second VM has the image and is running the container. Add the following block of code into the sshagent command, after the first shell block.
 ```
 sh """
-ssh jenkins@<WEBSERVER_INTERAL_IP> -i /home/jenkins/.ssh/webserver-key <<EOF
+ssh jenkins@<WEBSERVER-2-IP> -i /home/jenkins/.ssh/webserver-key <<EOF
 hostname
 gcloud auth configure-docker eu.gcr.io -q
 sudo docker pull eu.gcr.io/PROJECT-ID/flask-web-app:1.0
-sudo docker run --rm -d -p 8080:8080/tcp -e 'DB_IP=${DB_IP}'  -e 'DB_USERNAME=${DB_USERNAME}' -e 'DB_PASSWORD=${DB_PASSWORD}' --name flask-example-1 eu.gcr.io/PROJECT-ID/flask-web-app:1.0
+sudo docker run --rm -d -p 80:8080/tcp -e 'DB_IP=${DB_IP}'  -e 'DB_USERNAME=${DB_USERNAME}' -e 'DB_PASSWORD=${DB_PASSWORD}' --name flask-example-1 eu.gcr.io/PROJECT-ID/flask-web-app:1.0
 """
 ```
 7. Build Now and see that it passes.
@@ -494,7 +494,7 @@ pipeline {
                             hostname
                             gcloud auth configure-docker eu.gcr.io -q
                             sudo docker pull eu.gcr.io/PROJECT-ID/flask-web-app:1.0
-                            sudo docker run --rm -d -p 8080:80/tcp -e 'DB_IP=${DB_IP}'  -e 'DB_USERNAME=${DB_USERNAME}' -e 'DB_PASSWORD=${DB_PASSWORD}' --name flask-example-1 eu.gcr.io/PROJECT-ID/flask-web-app:1.0
+                            sudo docker run --rm -d -p 80:8080/tcp -e 'DB_IP=${DB_IP}'  -e 'DB_USERNAME=${DB_USERNAME}' -e 'DB_PASSWORD=${DB_PASSWORD}' --name flask-example-1 eu.gcr.io/PROJECT-ID/flask-web-app:1.0
                             """
 
                             sh """
@@ -502,7 +502,7 @@ pipeline {
                             hostname
                             gcloud auth configure-docker eu.gcr.io -q
                             sudo docker pull eu.gcr.io/PROJECT-ID/flask-web-app:1.0
-                            sudo docker run --rm -d -p 8080:80/tcp -e 'DB_IP=${DB_IP}'  -e 'DB_USERNAME=${DB_USERNAME}' -e 'DB_PASSWORD=${DB_PASSWORD}' --name flask-example-1 eu.gcr.io/PROJECT-ID/flask-web-app:1.0
+                            sudo docker run --rm -d -p 80:8080/tcp -e 'DB_IP=${DB_IP}'  -e 'DB_USERNAME=${DB_USERNAME}' -e 'DB_PASSWORD=${DB_PASSWORD}' --name flask-example-1 eu.gcr.io/PROJECT-ID/flask-web-app:1.0
                             """
                         }
                     }

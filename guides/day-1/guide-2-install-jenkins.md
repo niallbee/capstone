@@ -153,7 +153,7 @@ As mentioned in the previous guide the controller and agent are going to communi
 
 1. Still inside of the jenkins agent terminal, create a jenkins user and password using the following command
    ```
-   sudo adduser jenkins --shell /bin/bash
+   sudo adduser jenkins
    ```
 
 

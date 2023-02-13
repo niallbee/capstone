@@ -147,7 +147,7 @@ As mentioned in the previous guide the controller and agent are going to communi
    ssh -i ~/.ssh/myKeyFile testUser@<jenkins-agent-vm INTERNAL_IP>
    sudo apt update
    sudo apt install openjdk-11-jre -y
-   sudo apt install docker.io
+   sudo apt install docker.io -y
    ```
 
 ## Creating a new user

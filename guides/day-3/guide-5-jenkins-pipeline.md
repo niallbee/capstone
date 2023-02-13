@@ -464,6 +464,7 @@ pipeline {
                 script{
                     sh "sudo chmod 666 /var/run/docker.sock"
                     dockerimage = docker.build("flask-web-app:1.0", "./flask-example-cicd/")
+                    sh "docker images"
                 }
             }
         }

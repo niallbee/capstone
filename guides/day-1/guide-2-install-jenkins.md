@@ -147,6 +147,7 @@ As mentioned in the previous guide the controller and agent are going to communi
    ssh -i ~/.ssh/myKeyFile testUser@<jenkins-agent-vm INTERNAL_IP>
    sudo apt update
    sudo apt install openjdk-11-jre -y
+   sudo apt install docker.io
    ```
 
 ## Creating a new user
@@ -156,8 +157,7 @@ As mentioned in the previous guide the controller and agent are going to communi
    sudo adduser jenkins
    ```
 
-
-   Type a password when prompted. E.g. password: jenkins. The above commands should create a user and a home directory names jenkins under `/home`.
+   Type a password when prompted. E.g. password: jenkins.
 
 2. Add this user as sudo
 ```
@@ -174,6 +174,15 @@ su jenkins
 5. Create a `jenkins_slave` directory under /home/jenkins
 ```
 mkdir /home/jenkins/jenkins_slave
+```
+
+6. Now we need to edit the /etc/sudoers file to disable tty while executing sudo commands with the jenkins user from the jenkins pipeline.
+```
+sudo nano /etc/suoders
+```
+Inside of this file, under the section `# Allow members of group sudo to execute any command`, add the following line.
+```
+jenkins ALL=(ALL:ALL) NOPASSWD: ALL
 ```
 
 
@@ -231,6 +240,11 @@ Click Create.
 5. Click save. Jenkins will automatically connect to the slave machine and configure it as an agent.
 
 6. Click on the agent you just created. Click Log, you should see `This node is being launched`, eventually you should see `Agent successfully connected and online`. You have now made the second VM a permanent Jenkins slave!
+
+## Removing executors from the controller VM
+To ensure that only the agent VM is used for executing the pipeline, we need to remove any executors from the controller.
+
+1. Go to Manage Jenkins -> Manage Nodes and Clouds -> Built-in node -> Change the number of executors to 0.
 
 ## Finishing up
 You have now configured:

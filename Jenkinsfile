@@ -3,15 +3,14 @@ pipeline {
 	environment { // GIVE THESE VALUES
 		something=""
 		//containerName="flask-app-alpine-niall";
-		//imageName="eu.gcr.io/lbg-cloud-incubation/flask-app-alpine-niall";
+		imageName="eu.gcr.io/playpen-95sf2g/capstone-app";
 	}
 	stages{
 		stage('Docker Build'){
 			steps{
 			sh '''
-			echo Hi there
+			docker build -t $imageName:latest -t $imageName:build-$BUILD_NUMBER .
 			'''
-            //docker build -t $imageName:latest -t $imageName:build-$BUILD_NUMBER .
 			}
 		}
 		// stage('Push Images'){

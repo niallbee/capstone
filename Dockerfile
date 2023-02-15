@@ -11,7 +11,7 @@ ENV FLASK_ENV=stage
 ENV FLASK_RUN_HOST=0.0.0.0
 ENV FLASK_RUN_PORT=8080
 ENV DB_IP=$db_ip
-ENV DB_USERNAME=$db_username
-ENV DB_PASSWORD=$db_password
+ENV DB_USERNAME=capstone
+ENV DB_PASSWORD=capstone
 EXPOSE 8080
 CMD ["flask","run"]

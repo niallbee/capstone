@@ -2,7 +2,7 @@ pipeline {
 	agent any
 	environment { // GIVE THESE VALUES
 		something=""
-		//containerName="flask-app-alpine-niall";
+		containerName="capstone-app";
 		imageName="eu.gcr.io/playpen-95sf2g/capstone-app";
 	}
 	stages{
@@ -13,34 +13,25 @@ pipeline {
 			'''
 			}
 		}
-		// stage('Push Images'){
-		// 	steps{
-		// 	sh '''
-		// 	docker push $imageName:latest
-		// 	docker push $imageName:build-$BUILD_NUMBER
-		// 	'''
-		// 	}
-        //         }
-        stage('Stopping container'){
+		stage('Push Images'){
+			steps{
+			sh '''
+			docker push $imageName:latest
+			docker push $imageName:build-$BUILD_NUMBER
+			'''
+			}
+            }
+        stage('Deploy container'){
 			steps{
                 sh '''
-                echo hi there again
+
+				docker stop $containerName
+				docker rm $containerName
+				docker rmi $imageName
+				docker run -d -p 8080:8080 --name $containerName $imageName
                 '''
-			    // script {
-				// 	if ("${GIT_BRANCH}" == 'origin/main') {
-				// 		sh '''
-				// 		ssh -i "~/.ssh/id_rsa" jenkins@34.142.90.72 << EOF
-						
-				// 		'''
-                //         //docker rm -f $containerName
-				// 	} else if ("${GIT_BRANCH}" == 'origin/development') {
-				// 		sh '''
-				// 		ssh -i "~/.ssh/id_rsa" jenkins@34.105.192.100 << EOF
-						
-				// 		'''
-                //         //docker rm -f $containerName
-				// 	}
-				// 	}
+				//                ssh -i "~/.ssh/id_rsa" jenkins@34.142.90.72 << EOF
+			    
                 }
 		}
 	}

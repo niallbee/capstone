@@ -1,6 +1,7 @@
 pipeline {
 	agent any
 	environment { // GIVE THESE VALUES
+		something=""
 		//containerName="flask-app-alpine-niall";
 		//imageName="eu.gcr.io/lbg-cloud-incubation/flask-app-alpine-niall";
 	}

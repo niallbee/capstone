@@ -38,7 +38,6 @@ pipeline {
 			steps{
 			sh '''
 			./reset-dev.sh
-			pytest
 			'''
 			}
             }

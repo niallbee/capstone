@@ -24,13 +24,13 @@ pipeline {
         stage('Deploy container'){
 			steps{
                 sh '''
-
+				ssh -i "~/.ssh/myKeyFile" jenkins@34.89.96.104 << EOF
 				docker stop $containerName
 				docker rm $containerName
 				docker rmi $imageName
 				docker run -d -p 8080:8080 --name $containerName $imageName
                 '''
-				//                ssh -i "~/.ssh/id_rsa" jenkins@34.142.90.72 << EOF
+				//                
 			    
                 }
 		}

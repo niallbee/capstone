@@ -24,7 +24,7 @@ pipeline {
         stage('Deploy container'){
 			steps{
                 sh '''
-				ssh -i "~/.ssh/id_rsa" access_user@34.89.96.104 << EOF
+				ssh -i "~/.ssh/myKeyFile" jenkins@34.89.96.104 << EOF
 				docker stop $containerName
 				docker rm $containerName
 				docker rmi $imageName

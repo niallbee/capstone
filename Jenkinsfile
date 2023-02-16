@@ -37,7 +37,7 @@ pipeline {
 		stage('Test app'){
 			steps{
 			sh '''
-			reset-dev.sh
+			./reset-dev.sh
 			pytest
 			'''
 			}
